@@ -2,81 +2,72 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>Noise TWA Calculator - Timeline Edition</title>
+    <title>Noise TWA Calculator - Real-time Timeline</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; padding: 20px; color: #1c1e21; }
-        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
         h2 { color: #1a73e8; border-bottom: 3px solid #1a73e8; padding-bottom: 10px; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background: #fff; }
-        th, td { border: 1px solid #dee2e6; padding: 12px; text-align: center; }
-        th { background-color: #f8f9fa; color: #495057; font-weight: bold; }
-        input { width: 90%; padding: 10px; border: 1px solid #ced4da; border-radius: 6px; font-size: 14px; }
-        .btn { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #dee2e6; padding: 10px; text-align: center; }
+        th { background-color: #f8f9fa; font-weight: bold; }
+        input { padding: 8px; border: 1px solid #ced4da; border-radius: 6px; }
+        .t-input { width: 110px; }
+        .btn { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
         .btn-add { background-color: #34a853; color: white; margin-bottom: 15px; }
-        .btn-calc { background-color: #1a73e8; color: white; width: 100%; margin-top: 20px; box-shadow: 0 4px 6px rgba(26,115,232,0.3); }
-        .btn-del { background-color: #ea4335; color: white; padding: 5px 10px; }
+        .btn-calc { background-color: #1a73e8; color: white; width: 100%; margin-top: 10px; }
         .result-section { margin-top: 30px; display: none; border-top: 2px dashed #ccc; padding-top: 20px; }
         .metric-container { display: flex; justify-content: space-around; margin-bottom: 25px; }
-        .metric-card { background: #f8f9fa; padding: 20px; border-radius: 12px; width: 30%; text-align: center; border: 1px solid #e8eaed; }
+        .metric-card { background: #f8f9fa; padding: 15px; border-radius: 12px; width: 30%; text-align: center; border: 1px solid #e8eaed; }
         .metric-value { font-size: 24px; font-weight: bold; color: #1a73e8; }
-        .status-pass { color: #188038; border-left: 5px solid #188038; background: #e6f4ea; padding: 10px; border-radius: 4px; }
-        .status-fail { color: #d93025; border-left: 5px solid #d93025; background: #fce8e6; padding: 10px; border-radius: 4px; }
-        .math-box { background: #202124; color: #e8eaed; padding: 20px; border-radius: 8px; font-family: 'Courier New', monospace; overflow-x: auto; line-height: 1.6; }
-        .chart-container { position: relative; margin: auto; height: 300px; width: 100%; margin-bottom: 30px; }
+        .math-box { background: #202124; color: #e8eaed; padding: 20px; border-radius: 8px; font-family: monospace; overflow-x: auto; }
+        .chart-container { position: relative; height: 350px; width: 100%; margin-bottom: 30px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>🔊 วิเคราะห์ระดับเสียงสะสมและ Timeline (Regulation 2561)</h2>
+    <h2>🔊 วิเคราะห์เสียงสะสมตามช่วงเวลาปฏิบัติงาน (Real-time Timeline)</h2>
     
     <table id="noiseTable">
         <thead>
             <tr>
                 <th>จุดที่/กิจกรรม</th>
                 <th>ระดับเสียง (dBA)</th>
-                <th>เวลาสัมผัส (ชม.)</th>
+                <th>เวลาเริ่ม</th>
+                <th>เวลาเลิก</th>
                 <th>จัดการ</th>
             </tr>
         </thead>
         <tbody>
             <tr>
-                <td><input type="text" value="จุดที่ 1" class="pname"></td>
-                <td><input type="number" class="dba" value="88" step="0.1"></td>
-                <td><input type="number" class="time" value="4" step="0.1"></td>
+                <td><input type="text" value="จุดที่ 1" style="width:90%"></td>
+                <td><input type="number" class="dba" value="88" step="0.1" style="width:70px"></td>
+                <td><input type="time" class="t-start" value="08:00"></td>
+                <td><input type="time" class="t-end" value="12:00"></td>
                 <td>-</td>
             </tr>
         </tbody>
     </table>
     
-    <button class="btn btn-add" onclick="addRow()">+ เพิ่มจุดตรวจวัด</button>
-    <button class="btn btn-calc" onclick="calculate()">🚀 ประมวลผลและแสดงวิธีแทนค่า</button>
+    <button class="btn btn-add" onclick="addRow()">+ เพิ่มช่วงเวลา/จุดวัด</button>
+    <button class="btn btn-calc" onclick="calculate()">🚀 ประมวลผลและสร้าง Timeline</button>
 
     <div id="resultArea" class="result-section">
         <div id="statusDiv"></div>
-        
         <div class="metric-container">
-            <div class="metric-card">
-                <div>ปริมาณเสียงสะสม (D)</div>
-                <div class="metric-value" id="doseVal">0%</div>
-            </div>
-            <div class="metric-card">
-                <div>ระดับเสียงเฉลี่ย (TWA)</div>
-                <div class="metric-value" id="twaVal">0 dBA</div>
-            </div>
-            <div class="metric-card">
-                <div>เกณฑ์มาตรฐาน</div>
-                <div class="metric-value">85 dBA</div>
-            </div>
+            <div class="metric-card"><div>Dose (D)</div><div class="metric-value" id="doseVal">0%</div></div>
+            <div class="metric-card"><div>TWA (8 ชม.)</div><div class="metric-value" id="twaVal">0 dBA</div></div>
+            <div class="metric-card"><div>รวมเวลาทำงาน</div><div class="metric-value" id="totalTimeVal">0 ชม.</div></div>
         </div>
 
-        <h3>📊 Timeline สัดส่วนเวลาการทำงาน</h3>
+        <h3>📊 Timeline การสัมผัสเสียงรายชั่วโมง</h3>
         <div class="chart-container">
             <canvas id="timelineChart"></canvas>
         </div>
 
-        <h3>📝 วิธีคำนวณและแทนค่าตัวเลข (Step-by-Step)</h3>
+        <h3>📝 วิธีคำนวณและแทนค่า</h3>
         <div class="math-box" id="mathSteps"></div>
     </div>
 </div>
@@ -87,101 +78,95 @@
     function addRow() {
         let table = document.getElementById("noiseTable").getElementsByTagName('tbody')[0];
         let row = table.insertRow();
-        row.innerHTML = `<td><input type="text" value="จุดที่ ${table.rows.length}" class="pname"></td>
-                         <td><input type="number" class="dba" value="85" step="0.1"></td>
-                         <td><input type="number" class="time" value="1" step="0.1"></td>
-                         <td><button class="btn btn-del" onclick="this.parentElement.parentElement.remove()">x</button></td>`;
+        let lastEnd = document.querySelectorAll('.t-end');
+        let nextStart = lastEnd[lastEnd.length-1].value;
+        row.innerHTML = `<td><input type="text" value="จุดที่ ${table.rows.length}" style="width:90%"></td>
+                         <td><input type="number" class="dba" value="85" step="0.1" style="width:70px"></td>
+                         <td><input type="time" class="t-start" value="${nextStart}"></td>
+                         <td><input type="time" class="t-end" value="17:00"></td>
+                         <td><button onclick="this.parentElement.parentElement.remove()" style="background:#ea4335;color:white;border:none;border-radius:4px;cursor:pointer;">x</button></td>`;
+    }
+
+    function timeToDecimal(t) {
+        let [h, m] = t.split(':').map(Number);
+        return h + (m / 60);
     }
 
     function calculate() {
-        let names = document.getElementsByClassName("pname");
-        let dbas = document.getElementsByClassName("dba");
-        let times = document.getElementsByClassName("time");
+        let rows = document.getElementById("noiseTable").getElementsByTagName('tbody')[0].rows;
+        let totalDoseRatio = 0, formulaParts = [], labels = [], datasets = [], totalHours = 0;
         
-        let totalDoseRatio = 0;
-        let formulaParts = [];
-        let labels = [];
-        let chartData = [];
-        let colors = [];
+        for (let row of rows) {
+            let name = row.cells[0].querySelector('input').value;
+            let L = parseFloat(row.cells[1].querySelector('input').value);
+            let startStr = row.cells[2].querySelector('input').value;
+            let endStr = row.cells[3].querySelector('input').value;
 
-        for (let i = 0; i < dbas.length; i++) {
-            let L = parseFloat(dbas[i].value);
-            let C = parseFloat(times[i].value);
-            let name = names[i].value;
+            let startDec = timeToDecimal(startStr);
+            let endDec = timeToDecimal(endStr);
+            let C = endDec - startDec;
+            if (C < 0) C += 24; // กรณีเลิกงานหลังเที่ยงคืน
 
-            // เกณฑ์ตามประกาศฯ 2561: Threshold 80, Criteria 85, Q3 
             let T = (L < 80) ? Infinity : 8 / Math.pow(2, (L - 85) / 3);
             let frac = (T === Infinity) ? 0 : C / T;
             
             totalDoseRatio += frac;
-            let tDisplay = (T === Infinity) ? "∞" : T.toFixed(2);
-            formulaParts.push(`(${C.toFixed(2)} / ${tDisplay})`);
+            totalHours += C;
+            formulaParts.push(`(${C.toFixed(2)} / ${T === Infinity ? '∞' : T.toFixed(2)})`);
             
-            labels.push(name);
-            chartData.push(C);
-            colors.push(L > 85 ? '#ea4335' : (L >= 80 ? '#fbbc04' : '#34a853'));
+            datasets.push({
+                label: name,
+                data: [{ x: [startDec, endDec], y: name, dba: L }],
+                backgroundColor: L > 85 ? '#ea4335' : (L >= 80 ? '#fbbc04' : '#34a853')
+            });
         }
 
-        let dosePct = totalDoseRatio * 100; // [cite: 66]
-        let twa = (dosePct > 0) ? (10 * Math.log10(dosePct / 100) + 85) : 0; // [cite: 71]
+        let dosePct = totalDoseRatio * 100;
+        let twa = (dosePct > 0) ? (10 * Math.log10(dosePct / 100) + 85) : 0;
 
-        // แสดงผลลัพธ์
         document.getElementById("resultArea").style.display = "block";
         document.getElementById("doseVal").innerText = dosePct.toFixed(2) + "%";
         document.getElementById("twaVal").innerText = twa.toFixed(2) + " dBA";
+        document.getElementById("totalTimeVal").innerText = totalHours.toFixed(2) + " ชม.";
 
-        let statusDiv = document.getElementById("statusDiv");
-        if (twa > 85) {
-            statusDiv.innerHTML = `<h3 class="status-fail">🚨 ผลการวิเคราะห์: ${twa.toFixed(2)} dBA - เกินเกณฑ์มาตรฐาน (ต้องแก้ไข)</h3>`;
-        } else {
-            statusDiv.innerHTML = `<h3 class="status-pass">✅ ผลการวิเคราะห์: ${twa.toFixed(2)} dBA - อยู่ในเกณฑ์มาตรฐาน</h3>`;
-        }
-
-        // วิธีแทนค่า
+        // วิธีคำนวณ
         document.getElementById("mathSteps").innerHTML = `
-            <b>ขั้นที่ 1: คำนวณปริมาณเสียงสะสม (D)</b><br>
-            สูตร: D = [(C1/T1) + (C2/T2) + ...] x 100 [cite: 66]<br>
-            แทนค่า: D = [${formulaParts.join(" + ")}] x 100<br>
-            ผลลัพธ์: D = ${(total_ratio = totalDoseRatio.toFixed(4))} x 100 = <b>${dosePct.toFixed(2)}%</b><br><br>
-            
-            <b>ขั้นที่ 2: คำนวณระดับเสียงเฉลี่ย (TWA)</b><br>
-            สูตร: TWA = 10.0 x log10(D/100) + 85 [cite: 71]<br>
-            แทนค่า: TWA = 10.0 x log10(${dosePct.toFixed(2)} / 100) + 85<br>
-            ผลลัพธ์: TWA = <b>${twa.toFixed(2)} dBA</b>
+            <b>1. คำนวณปริมาณเสียงสะสม (D):</b><br>
+            D = [${formulaParts.join(" + ")}] x 100 = <b>${dosePct.toFixed(2)}%</b><br><br>
+            <b>2. คำนวณระดับเสียงเฉลี่ย (TWA):</b><br>
+            TWA = 10.0 x log10(${dosePct.toFixed(2)}/100) + 85 = <b>${twa.toFixed(2)} dBA</b>
         `;
 
-        // สร้าง/อัปเดตกราฟ Timeline
+        // สร้าง Gantt Chart
         if (myChart) myChart.destroy();
         const ctx = document.getElementById('timelineChart').getContext('2d');
         myChart = new Chart(ctx, {
             type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'ระยะเวลาที่สัมผัส (ชั่วโมง)',
-                    data: chartData,
-                    backgroundColor: colors,
-                    borderRadius: 5
-                }]
-            },
+            data: { datasets: datasets },
             options: {
                 indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        min: 0, max: 24,
+                        title: { display: true, text: 'เวลาของวัน (นาฬิกา)' },
+                        ticks: { stepSize: 1, callback: v => v + ':00' }
+                    },
+                    y: { stacked: true }
+                },
                 plugins: {
                     legend: { display: false },
-                    title: { display: true, text: 'Timeline ระยะเวลาปฏิบัติงานรายจุด (เขียว: <80, เหลือง: 80-85, แดง: >85)' }
-                },
-                scales: {
-                    x: { title: { display: true, text: 'ชั่วโมง' }, max: Math.max(...chartData, 8) }
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `ระดับเสียง: ${ctx.raw.dba} dBA (${(ctx.raw.x[1]-ctx.raw.x[0]).toFixed(2)} ชม.)`
+                        }
+                    }
                 }
             }
         });
-        
-        // เลื่อนหน้าจอลงมาดูผล
         document.getElementById("resultArea").scrollIntoView({ behavior: 'smooth' });
     }
 </script>
-
 </body>
 </html>
