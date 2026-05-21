@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Noise - คำนวณเสียงสะสม</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .graph-container {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 25px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .graph-container h6 {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 15px;
+        }
+        
+        .noise-level-badge {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 6px;
+        }
+        
+        .legend-high { background-color: #ef4444; }
+        .legend-warning { background-color: #f59e0b; }
+        .legend-safe { background-color: #22c55e; }
+        
+        .stats-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 16px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .stats-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #1e293b;
+        }
+        
+        .stats-label {
+            font-size: 0.7rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .ppe-card {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border: 2px solid #22c55e;
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 25px;
+        }
+        
+        .ppe-card h6 {
+            font-weight: 700;
+            color: #166534;
+            margin-bottom: 15px;
+        }
+        
+        .method-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        
+        .method-osha { background: #3b82f6; color: white; }
+        .method-niosh { background: #10b981; color: white; }
+        .method-none { background: #64748b; color: white; }
+        
+        .form-label-custom {
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: #475569;
+            margin-bottom: 6px;
+        }
+        
+        .btn-outline-custom {
+            background: transparent;
+            border: 2px solid #667eea;
+            color: #667eea;
+            padding: 8px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-outline-custom:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 10px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+            color: white;
+        }
+        
+        .btn-back, .btn-print {
+            background: rgba(255,255,255,0.15);
+            border: none;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+        
+        .btn-back:hover, .btn-print:hover {
+            background: rgba(255,255,255,0.25);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .tool-page {
+            background: white;
+            border-radius: 28px;
+            min-height: 80vh;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .tool-header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            padding: 20px 28px;
+        }
+        
+        .tool-body {
+            padding: 28px;
+        }
+        
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .result-ppe-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 5px solid;
+        }
+        
+        @media (max-width: 768px) {
+            .tool-body { padding: 20px; }
+            .stats-value { font-size: 1.4rem; }
+        }
+        
+        @media print {
+            body { background: white; padding: 0; }
+            .no-print, .tool-header .btn-back, .tool-header .btn-print,
+            .btn-primary-gradient, .btn-outline-custom { display: none !important; }
+            .tool-page { box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+<div class="main-container">
+    <div class="tool-page">
+        <div class="tool-header d-flex justify-content-between align-items-center">
+            <div>
+                <i class="bi bi-ear fs-4 me-2"></i>
+                <strong>คำนวณเสียงสะสม</strong>
+                <span class="ms-2 small opacity-75">TWA / Dose / PPE Protection</span>
+            </div>
+            <div class="no-print">
+                <button class="btn-print me-2" onclick="window.print()"><i class="bi bi-printer"></i> พิมพ์</button>
+                <button class="btn-back" onclick="location.href='index.html'"><i class="bi bi-arrow-left"></i> กลับหน้าแรก</button>
+            </div>
+        </div>
+        <div class="tool-body">
+            <div class="alert alert-info small py-2">
+                <i class="bi bi-info-circle"></i> เกณฑ์: Threshold 80 dBA | มาตรฐาน 85 dBA (OSHA 90 dBA) | Q=3
+            </div>
+            
+            <!-- ช่องกรอกข้อมูล -->
+            <div class="table-responsive mb-3">
+                <table class="table table-bordered" id="noiseTable" style="background: white;">
+                    <thead class="table-light">
+                        <tr><th>กิจกรรม/จุด</th><th>ระดับเสียง (dBA)</th><th>เวลาเริ่ม</th><th>เวลาเลิก</th><th style="width:50px"></th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><input type="text" class="form-control form-control-sm" value="งานผลิต" style="min-width:130px"></td>
+                            <td><input type="number" class="form-control form-control-sm noise-dba" value="85" step="0.5" style="width:90px"></td>
+                            <td><input type="time" class="form-control form-control-sm noise-start" value="08:00" style="width:105px"></td>
+                            <td><input type="time" class="form-control form-control-sm noise-end" value="12:00" style="width:105px"></td>
+                            <td class="text-center">-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="d-flex gap-2 mb-4 no-print">
+                <button class="btn-outline-custom btn-sm" onclick="addRow()"><i class="bi bi-plus"></i> เพิ่มช่วงเวลา</button>
+                <button class="btn-primary-gradient btn-sm" onclick="calc()"><i class="bi bi-calculator"></i> คำนวณ</button>
+            </div>
+            
+            <!-- ส่วนเลือกใช้ PPE -->
+            <div class="ppe-card no-print" id="ppeSection" style="display: none;">
+                <h6><i class="bi bi-shield-check"></i> การประเมินประสิทธิภาพ PPE (เครื่องป้องกันเสียง)</h6>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label-custom">สถานะการใช้ PPE</label>
+                        <select class="form-select" id="ppeStatus" onchange="togglePpeInput()">
+                            <option value="none">🚫 ไม่ได้ใช้ PPE</option>
+                            <option value="use">✅ ใช้ PPE</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3" id="ppeTypeDiv" style="display: none;">
+                        <label class="form-label-custom">ชนิดของ PPE</label>
+                        <select class="form-select" id="ppeType" onchange="calculatePPE()">
+                            <option value="earmuff">ที่ครอบหู (Earmuff)</option>
+                            <option value="foam">โฟมอุดหูชนิดบีบอัดได้ (Foam Earplug)</option>
+                            <option value="other">ปลั๊กอุดหูชนิดอื่นๆ</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2" id="nrrDiv" style="display: none;">
+                        <label class="form-label-custom">ค่า NRR</label>
+                        <input type="number" class="form-control" id="nrrValue" placeholder="เช่น 29" value="29" step="1" oninput="calculatePPE()">
+                        <small class="text-muted">ค่า NRR ที่ระบุ</small>
+                    </div>
+                    <div class="col-md-4" id="methodDiv" style="display: none;">
+                        <label class="form-label-custom">เกณฑ์มาตรฐาน</label>
+                        <div class="d-flex gap-3 mt-1">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="method" id="methodOSHA" value="osha" checked onchange="calculatePPE()">
+                                <label class="form-check-label" for="methodOSHA">
+                                    <span class="method-badge method-osha">OSHA</span> (ลด 50%)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="method" id="methodNIOSH" value="niosh" onchange="calculatePPE()">
+                                <label class="form-check-label" for="methodNIOSH">
+                                    <span class="method-badge method-niosh">NIOSH</span> (ลดตามชนิด)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="ppeResult" class="mt-3"></div>
+            </div>
+            
+            <!-- ผลการคำนวณ -->
+            <div id="result" style="display: none;">
+                <!-- สถิติรวม -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <div class="stats-label">Dose (D)</div>
+                            <div class="stats-value" id="doseVal">0%</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <div class="stats-label">TWA 8 ชม.</div>
+                            <div class="stats-value" id="twaVal">0 dBA</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <div class="stats-label">สถานะ (NIOSH)</div>
+                            <div class="stats-value" id="statusVal">-</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <div class="stats-label">เวลารวม</div>
+                            <div class="stats-value" id="totalTimeVal">0 ชม.</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- TWA หลังจากใช้ PPE -->
+                <div class="row g-3 mb-4" id="ppeTwaRow" style="display: none;">
+                    <div class="col-md-12">
+                        <div class="stats-card" id="ppeResultCard">
+                            <div class="stats-label">🎧 TWA หลังใช้ PPE</div>
+                            <div class="stats-value" id="twaPpeVal">- dBA</div>
+                            <div id="ppeFormulaDetail" class="small mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- กราฟ Timeline -->
+                <div class="graph-container">
+                    <h6><i class="bi bi-graph-up"></i> Timeline การสัมผัสเสียงตลอดทั้งวัน</h6>
+                    <div style="position: relative; height: 300px;">
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                    <div class="d-flex justify-content-center gap-4 mt-3 small">
+                        <div><span class="noise-level-badge legend-safe"></span> &lt; 80 dBA (ปลอดภัย)</div>
+                        <div><span class="noise-level-badge legend-warning"></span> 80-85 dBA (เฝ้าระวัง)</div>
+                        <div><span class="noise-level-badge legend-high"></span> &gt; 85 dBA (อันตราย)</div>
+                    </div>
+                </div>
+                
+                <!-- รายละเอียดแต่ละช่วง -->
+                <div class="mt-4">
+                    <h6 class="fw-bold"><i class="bi bi-table"></i> รายละเอียดแต่ละช่วงเวลา</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered" id="detailTable">
+                            <thead class="table-light">
+                                <tr><th>กิจกรรม</th><th>ระดับเสียง (dBA)</th><th>เวลาเริ่ม</th><th>เวลาเลิก</th><th>ระยะเวลา (ชม.)</th><th>ค่า T (ชม.)</th><th>สัดส่วน C/T</th></tr>
+                            </thead>
+                            <tbody id="detailBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- วิธีคำนวณ -->
+                <div class="mt-3 p-3 bg-light rounded-3 small">
+                    <div class="fw-bold">📊 วิธีคำนวณ TWA และ Dose</div>
+                    <div id="formula" class="font-monospace"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let timelineChart = null;
+    let currentRawTwa = 0;
+    
+    function addRow() {
+        let tbody = document.querySelector('#noiseTable tbody');
+        let lastEnd = tbody.querySelectorAll('.noise-end');
+        let nextStart = lastEnd.length ? lastEnd[lastEnd.length-1].value : "13:00";
+        let r = tbody.insertRow();
+        r.innerHTML = `<td><input type="text" class="form-control form-control-sm" value="ช่วงที่ ${tbody.rows.length+1}" style="min-width:130px"></td>
+            <td><input type="number" class="form-control form-control-sm noise-dba" value="85" step="0.5" style="width:90px"></td>
+            <td><input type="time" class="form-control form-control-sm noise-start" value="${nextStart}" style="width:105px"></td>
+            <td><input type="time" class="form-control form-control-sm noise-end" value="17:00" style="width:105px"></td>
+            <td class="text-center"><button class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()"><i class="bi bi-trash"></i></button></td>`;
+    }
+    
+    function timeToDecimal(t) { 
+        if (!t) return 0;
+        let [h, m] = t.split(':');
+        return parseInt(h) + parseInt(m)/60; 
+    }
+    
+    function getRiskLevel(level) {
+        if (level < 80) return { text: "ปลอดภัย", class: "safe", color: "#22c55e" };
+        if (level <= 85) return { text: "เฝ้าระวัง", class: "warning", color: "#f59e0b" };
+        return { text: "อันตราย", class: "danger", color: "#ef4444" };
+    }
+    
+    function togglePpeInput() {
+        let ppeStatus = document.getElementById('ppeStatus').value;
+        let isUse = ppeStatus === 'use';
+        
+        document.getElementById('ppeTypeDiv').style.display = isUse ? 'block' : 'none';
+        document.getElementById('nrrDiv').style.display = isUse ? 'block' : 'none';
+        document.getElementById('methodDiv').style.display = isUse ? 'block' : 'none';
+        
+        if (isUse) {
+            calculatePPE();
+        } else {
+            document.getElementById('ppeTwaRow').style.display = 'none';
+        }
+    }
+    
+    // คำนวณการลดเสียงของ PPE ตามมาตรฐาน OSHA และ NIOSH
+    function calculatePPE() {
+        let ppeStatus = document.getElementById('ppeStatus').value;
+        if (ppeStatus !== 'use') {
+            document.getElementById('ppeTwaRow').style.display = 'none';
+            return;
+        }
+        
+        let nrr = parseFloat(document.getElementById('nrrValue').value) || 0;
+        let ppeType = document.getElementById('ppeType').value;
+        let method = document.querySelector('input[name="method"]:checked').value;
+        let rawTwa = currentRawTwa;
+        
+        if (rawTwa === 0) return;
+        
+        // ขั้นตอนที่ 1: ลบ 7 dB ก่อน (การปรับสำหรับหน่วย dBA)
+        let nrrAdjusted = nrr - 7;
+        
+        // ขั้นตอนที่ 2: Derating ตามเกณฑ์
+        let deratingPercent = 0;
+        let deratingReason = "";
+        
+        if (method === 'osha') {
+            // OSHA: ลด 50% (หรือหาร 2)
+            deratingPercent = 50;
+            deratingReason = "OSHA กำหนดให้ใช้ค่าเผื่อความปลอดภัย 50%";
+        } else {
+            // NIOSH: ลดตามชนิดอุปกรณ์
+            if (ppeType === 'earmuff') {
+                deratingPercent = 25;
+                deratingReason = "NIOSH แนะนำให้ลดค่า NRR ลง 25% สำหรับที่ครอบหู (Earmuff)";
+            } else if (ppeType === 'foam') {
+                deratingPercent = 50;
+                deratingReason = "NIOSH แนะนำให้ลดค่า NRR ลง 50% สำหรับโฟมอุดหูชนิดบีบอัดได้";
+            } else {
+                deratingPercent = 75;
+                deratingReason = "NIOSH แนะนำให้ลดค่า NRR ลง 75% สำหรับปลั๊กอุดหูประเภทอื่นๆ";
+            }
+        }
+        
+        // คำนวณการลดเสียงหลังจาก Derating
+        let effectiveReduction = nrrAdjusted * (1 - deratingPercent / 100);
+        let twaPpe = rawTwa - effectiveReduction;
+        twaPpe = Math.max(0, twaPpe);
+        
+        // ตรวจสอบเกณฑ์
+        let oshaLimit = 90;  // OSHA กำหนด 90 dBA
+        let nioshLimit = 85; // NIOSH แนะนำ 85 dBA
+        
+        let oshaStatus = twaPpe <= oshaLimit ? '✅ ผ่านเกณฑ์ OSHA' : '⚠️ เกินเกณฑ์ OSHA';
+        let nioshStatus = twaPpe <= nioshLimit ? '✅ ผ่านเกณฑ์ NIOSH' : '⚠️ เกินเกณฑ์ NIOSH';
+        
+        let ppeTypeText = "";
+        if (ppeType === 'earmuff') ppeTypeText = "ที่ครอบหู (Earmuff)";
+        else if (ppeType === 'foam') ppeTypeText = "โฟมอุดหูชนิดบีบอัดได้";
+        else ppeTypeText = "ปลั๊กอุดหูชนิดอื่นๆ";
+        
+        // แสดงผล
+        document.getElementById('ppeTwaRow').style.display = 'flex';
+        document.getElementById('twaPpeVal').innerHTML = twaPpe.toFixed(1) + ' dBA';
+        
+        let statusColor = twaPpe <= nioshLimit ? '#22c55e' : '#ef4444';
+        document.getElementById('twaPpeVal').style.color = statusColor;
+        
+        document.getElementById('ppeFormulaDetail').innerHTML = `
+            <div class="text-start">
+                <strong>อุปกรณ์:</strong> ${ppeTypeText} (NRR = ${nrr})<br>
+                <strong>ขั้นตอนที่ 1:</strong> ปรับสำหรับหน่วย dBA → NRR<sub>adj</sub> = NRR - 7 = ${nrr} - 7 = ${nrrAdjusted.toFixed(1)} dB<br>
+                <strong>ขั้นตอนที่ 2:</strong> ${deratingReason}<br>
+                &nbsp;&nbsp;ลด ${deratingPercent}% → การลดเสียงสุทธิ = ${nrrAdjusted.toFixed(1)} × ${(1 - deratingPercent/100)} = ${effectiveReduction.toFixed(1)} dB<br>
+                <strong>ผลลัพธ์:</strong> TWA<sub>หลังใช้ PPE</sub> = ${rawTwa.toFixed(1)} - ${effectiveReduction.toFixed(1)} = <strong class="fs-5">${twaPpe.toFixed(1)} dBA</strong><br>
+                <hr class="my-2">
+                <span class="badge bg-primary">OSHA มาตรฐาน 90 dBA</span> ${oshaStatus}<br>
+                <span class="badge bg-success">NIOSH มาตรฐาน 85 dBA</span> ${nioshStatus}
+            </div>
+        `;
+        
+        // อัปเดตสีการ์ดตามวิธี
+        let resultCard = document.getElementById('ppeResultCard');
+        if (method === 'osha') {
+            resultCard.style.background = "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)";
+            resultCard.style.borderColor = "#3b82f6";
+        } else {
+            resultCard.style.background = "linear-gradient(135deg, #d0f0d0 0%, #a8e6a8 100%)";
+            resultCard.style.borderColor = "#10b981";
+        }
+    }
+    
+    function calc() {
+        let rows = document.querySelectorAll('#noiseTable tbody tr');
+        let totalDose = 0;
+        let formulaParts = [];
+        let totalHours = 0;
+        let chartData = [];
+        let detailRows = [];
+        
+        for (let row of rows) {
+            let name = row.cells[0].querySelector('input').value;
+            let L = parseFloat(row.cells[1].querySelector('input').value);
+            let startStr = row.cells[2].querySelector('input').value;
+            let endStr = row.cells[3].querySelector('input').value;
+            
+            let startDec = timeToDecimal(startStr);
+            let endDec = timeToDecimal(endStr);
+            let C = endDec - startDec;
+            if (C < 0) C += 24;
+            
+            let T = (L < 80) ? Infinity : 8 / Math.pow(2, (L - 85) / 3);
+            let frac = (T === Infinity || T === 0) ? 0 : C / T;
+            
+            totalDose += frac;
+            totalHours += C;
+            formulaParts.push(`${name}: ${C.toFixed(2)}/${T === Infinity ? '∞' : T.toFixed(2)}`);
+            
+            chartData.push({
+                name: name,
+                start: startDec,
+                end: endDec,
+                dba: L,
+                color: getRiskLevel(L).color
+            });
+            
+            detailRows.push({
+                name: name,
+                dba: L,
+                start: startStr,
+                end: endStr,
+                duration: C.toFixed(2),
+                T: T === Infinity ? '∞' : T.toFixed(2),
+                ratio: frac.toFixed(4),
+                risk: getRiskLevel(L)
+            });
+        }
+        
+        let dosePct = totalDose * 100;
+        let twa = dosePct > 0 ? (10 * Math.log10(dosePct / 100) + 85) : 0;
+        twa = Math.round(twa * 10) / 10;
+        currentRawTwa = twa;
+        
+        // แสดงผลหลัก
+        document.getElementById('result').style.display = 'block';
+        document.getElementById('ppeSection').style.display = 'block';
+        
+        document.getElementById('doseVal').innerHTML = dosePct.toFixed(1) + '%';
+        document.getElementById('twaVal').innerHTML = twa.toFixed(1) + ' dBA';
+        document.getElementById('totalTimeVal').innerHTML = totalHours.toFixed(2) + ' ชม.';
+        
+        let statusNiosh = twa <= 85 ? '<span class="text-success">✅ ผ่านเกณฑ์ (≤85 dBA)</span>' : '<span class="text-danger">⚠️ เกินเกณฑ์ (>85 dBA)</span>';
+        document.getElementById('statusVal').innerHTML = statusNiosh;
+        document.getElementById('formula').innerHTML = `D = [${formulaParts.join(' + ')}] × 100 = ${dosePct.toFixed(1)}%<br>TWA = 10 × log₁₀(${dosePct.toFixed(1)}/100) + 85 = ${twa.toFixed(1)} dBA`;
+        
+        // สร้างตารางรายละเอียด
+        let detailBody = document.getElementById('detailBody');
+        detailBody.innerHTML = '';
+        for (let d of detailRows) {
+            detailBody.insertAdjacentHTML('beforeend', `
+                <tr>
+                    <td>${d.name}</td>
+                    <td class="text-center"><span class="badge" style="background: ${d.risk.color}">${d.dba}</span></td>
+                    <td>${d.start}</td>
+                    <td>${d.end}</td>
+                    <td class="text-center">${d.duration}</td>
+                    <td class="text-center">${d.T}</td>
+                    <td class="text-center">${d.ratio}</td>
+                </tr>
+            `);
+        }
+        
+        // คำนวณ PPE (ถ้าเลือกใช้)
+        togglePpeInput();
+        
+        // สร้างกราฟ Gantt Chart
+        if (timelineChart) {
+            timelineChart.destroy();
+        }
+        
+        const ctx = document.getElementById('timelineChart').getContext('2d');
+        
+        let datasets = [];
+        for (let i = 0; i < chartData.length; i++) {
+            let d = chartData[i];
+            datasets.push({
+                label: d.name,
+                data: [{
+                    x: [d.start, d.end],
+                    y: i,
+                    dba: d.dba
+                }],
+                backgroundColor: d.color,
+                borderColor: d.color,
+                borderWidth: 1,
+                barPercentage: 0.8,
+                categoryPercentage: 0.9
+            });
+        }
+        
+        timelineChart = new Chart(ctx, {
+            type: 'bar',
+            data: { datasets: datasets },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        min: 0,
+                        max: 24,
+                        title: {
+                            display: true,
+                            text: 'เวลาของวัน (นาฬิกา)',
+                            font: { size: 12, weight: 'bold' }
+                        },
+                        ticks: {
+                            stepSize: 2,
+                            callback: function(val) {
+                                let h = Math.floor(val);
+                                let m = Math.round((val - h) * 60);
+                                return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
+                            }
+                        },
+                        grid: { color: '#e2e8f0' }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'กิจกรรม/จุดทำงาน',
+                            font: { size: 12, weight: 'bold' }
+                        },
+                        ticks: {
+                            callback: function(val, index) {
+                                return chartData[index]?.name || '';
+                            },
+                            font: { size: 11 }
+                        },
+                        grid: { display: false }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let raw = context.raw;
+                                let startH = Math.floor(raw.x[0]);
+                                let startM = Math.round((raw.x[0] - startH) * 60);
+                                let endH = Math.floor(raw.x[1]);
+                                let endM = Math.round((raw.x[1] - endH) * 60);
+                                let duration = (raw.x[1] - raw.x[0]).toFixed(2);
+                                return [
+                                    `⏰ เวลา: ${startH.toString().padStart(2,'0')}:${startM.toString().padStart(2,'0')} - ${endH.toString().padStart(2,'0')}:${endM.toString().padStart(2,'0')}`,
+                                    `🔊 ระดับเสียง: ${raw.dba} dBA`,
+                                    `📊 ระยะเวลา: ${duration} ชั่วโมง`
+                                ];
+                            }
+                        },
+                        backgroundColor: '#1e293b',
+                        titleColor: '#fff',
+                        bodyColor: '#cbd5e1'
+                    },
+                    legend: { display: false }
+                }
+            }
+        });
+        
+        document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
+    }
+</script>
+</body>
+</html>

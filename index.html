@@ -2,171 +2,59 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>Noise TWA Calculator - Real-time Timeline</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-    <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; padding: 20px; color: #1c1e21; }
-        .container { max-width: 1000px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
-        h2 { color: #1a73e8; border-bottom: 3px solid #1a73e8; padding-bottom: 10px; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        th, td { border: 1px solid #dee2e6; padding: 10px; text-align: center; }
-        th { background-color: #f8f9fa; font-weight: bold; }
-        input { padding: 8px; border: 1px solid #ced4da; border-radius: 6px; }
-        .t-input { width: 110px; }
-        .btn { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-add { background-color: #34a853; color: white; margin-bottom: 15px; }
-        .btn-calc { background-color: #1a73e8; color: white; width: 100%; margin-top: 10px; }
-        .result-section { margin-top: 30px; display: none; border-top: 2px dashed #ccc; padding-top: 20px; }
-        .metric-container { display: flex; justify-content: space-around; margin-bottom: 25px; }
-        .metric-card { background: #f8f9fa; padding: 15px; border-radius: 12px; width: 30%; text-align: center; border: 1px solid #e8eaed; }
-        .metric-value { font-size: 24px; font-weight: bold; color: #1a73e8; }
-        .math-box { background: #202124; color: #e8eaed; padding: 20px; border-radius: 8px; font-family: monospace; overflow-x: auto; }
-        .chart-container { position: relative; height: 350px; width: 100%; margin-bottom: 30px; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSE Toolbox | หน้าแรก</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<div class="container">
-    <h2>🔊 วิเคราะห์เสียงสะสมตามช่วงเวลาปฏิบัติงาน (Real-time Timeline)</h2>
-    
-    <table id="noiseTable">
-        <thead>
-            <tr>
-                <th>จุดที่/กิจกรรม</th>
-                <th>ระดับเสียง (dBA)</th>
-                <th>เวลาเริ่ม</th>
-                <th>เวลาเลิก</th>
-                <th>จัดการ</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td><input type="text" value="จุดที่ 1" style="width:90%"></td>
-                <td><input type="number" class="dba" value="88" step="0.1" style="width:70px"></td>
-                <td><input type="time" class="t-start" value="08:00"></td>
-                <td><input type="time" class="t-end" value="12:00"></td>
-                <td>-</td>
-            </tr>
-        </tbody>
-    </table>
-    
-    <button class="btn btn-add" onclick="addRow()">+ เพิ่มช่วงเวลา/จุดวัด</button>
-    <button class="btn btn-calc" onclick="calculate()">🚀 ประมวลผลและสร้าง Timeline</button>
-
-    <div id="resultArea" class="result-section">
-        <div id="statusDiv"></div>
-        <div class="metric-container">
-            <div class="metric-card"><div>Dose (D)</div><div class="metric-value" id="doseVal">0%</div></div>
-            <div class="metric-card"><div>TWA (8 ชม.)</div><div class="metric-value" id="twaVal">0 dBA</div></div>
-            <div class="metric-card"><div>รวมเวลาทำงาน</div><div class="metric-value" id="totalTimeVal">0 ชม.</div></div>
+    <div class="main-container">
+        <div class="hero">
+            <div class="hero-icon">
+                <i class="bi bi-shield-check text-primary"></i>
+            </div>
+            <h1>HSE Toolbox</h1>
+            <p class="subtitle">เครื่องมือประเมินความเสี่ยงด้านอาชีวอนามัยและความปลอดภัย</p>
         </div>
-
-        <h3>📊 Timeline การสัมผัสเสียงรายชั่วโมง</h3>
-        <div class="chart-container">
-            <canvas id="timelineChart"></canvas>
-        </div>
-
-        <h3>📝 วิธีคำนวณและแทนค่า</h3>
-        <div class="math-box" id="mathSteps"></div>
-    </div>
-</div>
-
-<script>
-    let myChart = null;
-
-    function addRow() {
-        let table = document.getElementById("noiseTable").getElementsByTagName('tbody')[0];
-        let row = table.insertRow();
-        let lastEnd = document.querySelectorAll('.t-end');
-        let nextStart = lastEnd[lastEnd.length-1].value;
-        row.innerHTML = `<td><input type="text" value="จุดที่ ${table.rows.length}" style="width:90%"></td>
-                         <td><input type="number" class="dba" value="85" step="0.1" style="width:70px"></td>
-                         <td><input type="time" class="t-start" value="${nextStart}"></td>
-                         <td><input type="time" class="t-end" value="17:00"></td>
-                         <td><button onclick="this.parentElement.parentElement.remove()" style="background:#ea4335;color:white;border:none;border-radius:4px;cursor:pointer;">x</button></td>`;
-    }
-
-    function timeToDecimal(t) {
-        let [h, m] = t.split(':').map(Number);
-        return h + (m / 60);
-    }
-
-    function calculate() {
-        let rows = document.getElementById("noiseTable").getElementsByTagName('tbody')[0].rows;
-        let totalDoseRatio = 0, formulaParts = [], labels = [], datasets = [], totalHours = 0;
         
-        for (let row of rows) {
-            let name = row.cells[0].querySelector('input').value;
-            let L = parseFloat(row.cells[1].querySelector('input').value);
-            let startStr = row.cells[2].querySelector('input').value;
-            let endStr = row.cells[3].querySelector('input').value;
-
-            let startDec = timeToDecimal(startStr);
-            let endDec = timeToDecimal(endStr);
-            let C = endDec - startDec;
-            if (C < 0) C += 24; // กรณีเลิกงานหลังเที่ยงคืน
-
-            let T = (L < 80) ? Infinity : 8 / Math.pow(2, (L - 85) / 3);
-            let frac = (T === Infinity) ? 0 : C / T;
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="menu-card" onclick="location.href='hra.html'">
+                    <div class="menu-icon text-primary"><i class="bi bi-flask"></i></div>
+                    <h3>HRA สารเคมี</h3>
+                    <p>ประเมินความเสี่ยงสุขภาพจากสารเคมี<br>อ้างอิง ACGIH TLV</p>
+                    <span class="badge-tool"><i class="bi bi-database"></i> ฐานข้อมูล 600+ สาร</span>
+                </div>
+            </div>
             
-            totalDoseRatio += frac;
-            totalHours += C;
-            formulaParts.push(`(${C.toFixed(2)} / ${T === Infinity ? '∞' : T.toFixed(2)})`);
+            <div class="col-md-4">
+                <div class="menu-card" onclick="location.href='noise.html'">
+                    <div class="menu-icon text-danger"><i class="bi bi-ear"></i></div>
+                    <h3>Noise เสียงสะสม</h3>
+                    <p>คำนวณ Dose และ TWA ตามกฎหมายไทย<br>Threshold 80 dBA, Criteria 85 dBA</p>
+                    <span class="badge-tool"><i class="bi bi-calculator"></i> Q=3 Exchange Rate</span>
+                </div>
+            </div>
             
-            datasets.push({
-                label: name,
-                data: [{ x: [startDec, endDec], y: name, dba: L }],
-                backgroundColor: L > 85 ? '#ea4335' : (L >= 80 ? '#fbbc04' : '#34a853')
-            });
-        }
-
-        let dosePct = totalDoseRatio * 100;
-        let twa = (dosePct > 0) ? (10 * Math.log10(dosePct / 100) + 85) : 0;
-
-        document.getElementById("resultArea").style.display = "block";
-        document.getElementById("doseVal").innerText = dosePct.toFixed(2) + "%";
-        document.getElementById("twaVal").innerText = twa.toFixed(2) + " dBA";
-        document.getElementById("totalTimeVal").innerText = totalHours.toFixed(2) + " ชม.";
-
-        // วิธีคำนวณ
-        document.getElementById("mathSteps").innerHTML = `
-            <b>1. คำนวณปริมาณเสียงสะสม (D):</b><br>
-            D = [${formulaParts.join(" + ")}] x 100 = <b>${dosePct.toFixed(2)}%</b><br><br>
-            <b>2. คำนวณระดับเสียงเฉลี่ย (TWA):</b><br>
-            TWA = 10.0 x log10(${dosePct.toFixed(2)}/100) + 85 = <b>${twa.toFixed(2)} dBA</b>
-        `;
-
-        // สร้าง Gantt Chart
-        if (myChart) myChart.destroy();
-        const ctx = document.getElementById('timelineChart').getContext('2d');
-        myChart = new Chart(ctx, {
-            type: 'bar',
-            data: { datasets: datasets },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        min: 0, max: 24,
-                        title: { display: true, text: 'เวลาของวัน (นาฬิกา)' },
-                        ticks: { stepSize: 1, callback: v => v + ':00' }
-                    },
-                    y: { stacked: true }
-                },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: (ctx) => `ระดับเสียง: ${ctx.raw.dba} dBA (${(ctx.raw.x[1]-ctx.raw.x[0]).toFixed(2)} ชม.)`
-                        }
-                    }
-                }
-            }
-        });
-        document.getElementById("resultArea").scrollIntoView({ behavior: 'smooth' });
-    }
-</script>
+            <div class="col-md-4">
+                <div class="menu-card" onclick="location.href='ergonomic.html'">
+                    <div class="menu-icon text-success"><i class="bi bi-person-walking"></i></div>
+                    <h3>Ergonomics</h3>
+                    <p>ประเมินความเสี่ยงจากท่าทางการทำงาน<br>RULA & REBA</p>
+                    <span class="badge-tool"><i class="bi bi-activity"></i> วิเคราะห์ท่าทาง</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- เครดิต -->
+    <div class="text-center mt-5 pt-3">
+        <small class="text-white-50" style="font-size: 0.75rem; opacity: 0.7;">
+            <i class="bi bi-heart-fill text-danger"></i> พัฒนาโดย <strong>นายแพทย์ ชวภณ งามเจริญ</strong>
+        </small>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
