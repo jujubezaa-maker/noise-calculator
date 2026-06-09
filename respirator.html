@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSE Toolbox | ระบบเลือกหน้ากากป้องกัน (Respirator)</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; color: #2c3e50; }
+        .hero { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; padding: 2rem; border-radius: 15px; margin-bottom: 2rem; }
+        .hero h1 { font-weight: 700; margin-bottom: 0.5rem; font-size: 2rem; }
+        .hero .subtitle { color: #94a3b8; font-size: 1rem; margin-bottom: 0; }
+        
+        .card { border: none; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; overflow: hidden; }
+        .card-header { background-color: white; border-bottom: 1px solid #edf2f7; padding: 1.2rem 1.5rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .card-header .step-badge { background: #3b82f6; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; }
+        .card-body { padding: 1.5rem; }
+        
+        .form-label { font-weight: 500; color: #475569; font-size: 0.95rem; margin-bottom: 0.5rem; }
+        .form-select, .form-control { border: 2px solid #e2e8f0; border-radius: 8px; padding: 0.6rem 1rem; font-size: 0.95rem; transition: all 0.2s; }
+        .form-select:focus, .form-control:focus { border-color: #3b82f6; box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.1); }
+        .input-group-text { background-color: #f8fafc; border: 2px solid #e2e8f0; border-right: none; color: #64748b; }
+        .form-control.with-icon { border-left: none; }
+        
+        .result-panel { background: #eff6ff; border: 2px solid #bfdbfe; border-radius: 15px; padding: 1.5rem; height: 100%; display: flex; flex-direction: column; }
+        .result-panel.danger { background: #fef2f2; border-color: #fecaca; }
+        
+        .stat-box { background: white; border-radius: 10px; padding: 1rem; margin-bottom: 1rem; border-left: 4px solid #3b82f6; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .stat-label { font-size: 0.8rem; color: #64748b; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 0.2rem; }
+        .stat-value { font-size: 1.5rem; font-weight: 700; color: #0f172a; }
+        
+        .respirator-option { background: white; border: 2px solid #e2e8f0; border-radius: 10px; padding: 1rem; margin-bottom: 0.8rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 15px; }
+        .respirator-option:hover { border-color: #94a3b8; transform: translateY(-2px); }
+        .respirator-option.selected { border-color: #10b981; background: #f0fdf4; }
+        .respirator-option .icon-box { width: 50px; height: 50px; border-radius: 10px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #64748b; flex-shrink: 0; }
+        .respirator-option.selected .icon-box { background: #10b981; color: white; }
+        
+        .badge-apf { background: #475569; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: normal; }
+        .badge-filter { display: inline-block; padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; border: 1px solid rgba(0,0,0,0.1); margin-top: 10px; }
+        
+        .alert-custom { border-radius: 10px; padding: 1rem; margin-bottom: 1rem; font-size: 0.9rem; display: flex; align-items: flex-start; gap: 10px; }
+        .alert-custom i { font-size: 1.2rem; margin-top: -2px; }
+        .alert-warning-custom { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+        .alert-danger-custom { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+        
+        /* Layout for Desktop */
+        .desktop-layout { display: grid; grid-template-columns: 1fr 400px; gap: 20px; }
+        @media (max-width: 991px) { .desktop-layout { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body class="container-fluid py-4">
+    
+    <a href="index.html" class="btn btn-outline-secondary mb-3"><i class="bi bi-arrow-left"></i> กลับหน้าหลัก</a>
+
+    <div class="hero">
+        <h1><i class="bi bi-mask"></i> ตัวช่วยเลือกหน้ากาก (Respirator Selector)</h1>
+        <p class="subtitle">คำนวณสัดส่วนความเสี่ยง (Hazard Ratio) และแนะนำหน้ากาก/ตลับกรองตามมาตรฐาน OSHA & NIOSH</p>
+    </div>
+
+    <div class="desktop-layout">
+        <!-- Left: Input Form -->
+        <div class="input-section">
+            
+            <div class="card">
+                <div class="card-header"><span class="step-badge">1</span> ประเมินสภาพแวดล้อมหน้างาน</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <!-- IDLH -->
+                        <div class="col-md-6">
+                            <label class="form-label">สภาวะ IDLH (อันตรายถึงชีวิตเฉียบพลัน)?</label>
+                            <select class="form-select" id="idlhSelect" onchange="calculate()">
+                                <option value="no">ไม่ใช่ (สภาวะปกติ)</option>
+                                <option value="yes">ใช่ (อันตรายรุนแรง/ไม่ทราบค่า)</option>
+                            </select>
+                        </div>
+                        <!-- O2 -->
+                        <div class="col-md-6">
+                            <label class="form-label">ปริมาณออกซิเจน (O₂ %)</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="o2Input" value="20.9" step="0.1" onchange="calculate()">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" id="hazardCard">
+                <div class="card-header"><span class="step-badge">2</span> ระบุความเข้มข้นของสารเคมี</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">1. ค่าความเข้มข้นที่วัดได้จริง (C)</label>
+                            <input type="number" class="form-control" id="concInput" placeholder="เช่น 50" oninput="calculate()">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">2. ค่าขีดจำกัดมาตรฐาน (TLV/PEL)</label>
+                            <input type="number" class="form-control" id="oelInput" placeholder="เช่น 10" oninput="calculate()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" id="filterCard">
+                <div class="card-header"><span class="step-badge">3</span> เลือกประเภทตลับกรอง (Filter/Cartridge)</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">สถานะของสารเคมี</label>
+                            <select class="form-select" id="hazardType" onchange="calculate()">
+                                <option value="dust">ฝุ่น / ควัน / ละออง (Particulate)</option>
+                                <option value="gas">ไอระเหย / แก๊ส (Gas/Vapor)</option>
+                                <option value="both">ฝุ่นและไอระเหยผสมกัน</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6" id="oilContainer">
+                            <label class="form-label">มีละอองน้ำมันหน้างานไหม?</label>
+                            <select class="form-select" id="oilSelect" onchange="calculate()">
+                                <option value="no">ไม่มี</option>
+                                <option value="short">มี (ทำงาน < 8 ชั่วโมง)</option>
+                                <option value="long">มี (ทำงาน > 8 ชั่วโมง)</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12" id="gasContainer" style="display:none;">
+                            <label class="form-label">ประเภทไอระเหย/แก๊ส (เพื่อระบุสีตลับกรอง)</label>
+                            <select class="form-select" id="gasType" onchange="calculate()">
+                                <option value="OV">ไอระเหยสารอินทรีย์ (Organic Vapors)</option>
+                                <option value="AG">แก๊สกรด (Acid Gases)</option>
+                                <option value="OVAG">สารอินทรีย์ + แก๊สกรด (OV/AG)</option>
+                                <option value="AM">แอมโมเนีย (Ammonia)</option>
+                                <option value="FM">ฟอร์มาลดีไฮด์ (Formaldehyde)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Right: Results Panel -->
+        <div>
+            <div class="result-panel" id="resultPanel">
+                <h5 class="fw-bold mb-3"><i class="bi bi-clipboard-data"></i> ผลการประเมิน (Results)</h5>
+                
+                <!-- Alerts -->
+                <div id="alertContainer"></div>
+
+                <!-- Stats -->
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="stat-box">
+                            <div class="stat-label">Hazard Ratio (HR)</div>
+                            <div class="stat-value" id="hrDisplay">0.00</div>
+                            <div class="small text-muted">อัตราส่วนความเสี่ยง</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-box">
+                            <div class="stat-label">Min. APF</div>
+                            <div class="stat-value text-primary" id="apfDisplay">-</div>
+                            <div class="small text-muted">ค่า APF ขั้นต่ำที่ต้องการ</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter Recommendation -->
+                <div id="filterRecommend" class="mb-4"></div>
+
+                <hr class="border-secondary opacity-25">
+
+                <!-- Respirator Selection -->
+                <h6 class="fw-bold mt-2 mb-3">เลือกหน้ากากที่ต้องการใช้งาน:</h6>
+                <div id="respiratorList">
+                    <p class="text-muted small italic">กรุณาระบุความเข้มข้นเพื่อดูหน้ากากที่ผ่านเกณฑ์</p>
+                </div>
+                
+                <!-- Protection Status -->
+                <div class="mt-auto pt-3">
+                    <div id="protectionStatus" class="p-3 rounded-3" style="background: rgba(255,255,255,0.5); border: 1px dashed #cbd5e1;">
+                        <div class="small text-center text-muted">เลือกหน้ากากด้านบนเพื่อประเมินความปลอดภัยสุทธิ</div>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary w-100 mt-3" onclick="window.print()"><i class="bi bi-printer"></i> พิมพ์รายงาน</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const respirators = [
+            { id: "n95", name: "หน้ากาก N95 / กรองฝุ่น", type: "half", apf: 10, icon: "bi-mask" },
+            { id: "half", name: "หน้ากากครึ่งหน้า (Half-face)", type: "half", apf: 10, icon: "bi-person-bounding-box" },
+            { id: "full", name: "หน้ากากเต็มหน้า (Full-face)", type: "full", apf: 50, icon: "bi-emoji-sunglasses" },
+            { id: "papr25", name: "PAPR (ฮู้ดหลวม/Loose)", type: "papr", apf: 25, icon: "bi-fan" },
+            { id: "papr1000", name: "PAPR (หมวกคลุมแน่น/Tight)", type: "papr", apf: 1000, icon: "bi-wind" },
+            { id: "sar", name: "SAR (ชุดส่งอากาศภายนอก)", type: "air", apf: 1000, icon: "bi-modem" },
+            { id: "scba", name: "SCBA (ชุดถังสะพายหลัง)", type: "air", apf: 10000, icon: "bi-cylinder" }
+        ];
+
+        const gasColors = {
+            "OV": { label: "Organic Vapors", color: "black", bg: "#000", text: "#fff" },
+            "AG": { label: "Acid Gases", color: "white", bg: "#fff", text: "#000" },
+            "OVAG": { label: "OV / AG", color: "yellow", bg: "#fde047", text: "#000" },
+            "AM": { label: "Ammonia", color: "green", bg: "#166534", text: "#fff" },
+            "FM": { label: "Formaldehyde", color: "olive", bg: "#4d7c0f", text: "#fff" }
+        };
+
+        let currentApf = 0;
+
+        function calculate() {
+            // UI Toggles
+            const type = document.getElementById('hazardType').value;
+            document.getElementById('oilContainer').style.display = (type === 'dust' || type === 'both') ? 'block' : 'none';
+            document.getElementById('gasContainer').style.display = (type === 'gas' || type === 'both') ? 'block' : 'none';
+
+            // Get Values
+            const idlh = document.getElementById('idlhSelect').value === 'yes';
+            const o2 = parseFloat(document.getElementById('o2Input').value) || 0;
+            const c = parseFloat(document.getElementById('concInput').value);
+            const oel = parseFloat(document.getElementById('oelInput').value);
+            const oil = document.getElementById('oilSelect').value;
+            const gas = document.getElementById('gasType').value;
+            
+            const panel = document.getElementById('resultPanel');
+            const alertBox = document.getElementById('alertContainer');
+            
+            alertBox.innerHTML = '';
+            panel.className = 'result-panel'; // reset
+            
+            // Critical Conditions Check
+            if (idlh || o2 < 19.5) {
+                panel.classList.add('danger');
+                document.getElementById('hazardCard').style.opacity = '0.5';
+                document.getElementById('filterCard').style.opacity = '0.5';
+                
+                alertBox.innerHTML = `
+                    <div class="alert-custom alert-danger-custom">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <div>
+                            <strong>สภาวะอันตรายร้ายแรง!</strong><br>
+                            ${idlh ? 'เป็นพื้นที่ IDLH' : 'ออกซิเจนต่ำกว่า 19.5%'} ห้ามใช้หน้ากากกรองอากาศเด็ดขาด 
+                            ต้องใช้ <b>SCBA</b> หรือ <b>SAR แบบมีขวดสำรอง</b> เท่านั้น
+                        </div>
+                    </div>`;
+                
+                document.getElementById('hrDisplay').innerText = "N/A";
+                document.getElementById('apfDisplay').innerText = "10000";
+                document.getElementById('filterRecommend').innerHTML = "";
+                renderRespirators(10000);
+                return;
+            }
+
+            document.getElementById('hazardCard').style.opacity = '1';
+            document.getElementById('filterCard').style.opacity = '1';
+
+            // Normal Calculation
+            if (isNaN(c) || isNaN(oel) || oel <= 0) {
+                document.getElementById('hrDisplay').innerText = "0.00";
+                document.getElementById('apfDisplay').innerText = "-";
+                document.getElementById('respiratorList').innerHTML = '<p class="text-muted small italic text-center py-3">กรุณาระบุความเข้มข้นเพื่อประมวลผล</p>';
+                document.getElementById('filterRecommend').innerHTML = '';
+                updateProtectionStatus(0);
+                return;
+            }
+
+            const hr = c / oel;
+            document.getElementById('hrDisplay').innerText = hr.toFixed(2);
+            
+            // Determine Min APF
+            let minApf = 10;
+            if (hr > 1000) minApf = 10000;
+            else if (hr > 50) minApf = 1000;
+            else if (hr > 25) minApf = 50;
+            else if (hr > 10) minApf = 25;
+
+            document.getElementById('apfDisplay').innerText = minApf;
+            
+            if (hr > 1000) {
+                alertBox.innerHTML = `
+                    <div class="alert-custom alert-danger-custom">
+                        <i class="bi bi-exclamation-octagon"></i>
+                        <div><strong>ค่าความเข้มข้นสูงมาก (HR > 1000)</strong> เกินขีดจำกัดของหน้ากากกรองอากาศทั่วไป ต้องใช้ SCBA</div>
+                    </div>`;
+            }
+
+            // Determine Filter
+            let filterHtml = "";
+            if (type === 'dust' || type === 'both') {
+                if (oil === 'no') filterHtml += `<div class="badge-filter" style="background:#fef3c7; border-left:4px solid #f59e0b;">แผ่นกรองฝุ่น: <b>ซีรีส์ N, R หรือ P</b></div>`;
+                else if (oil === 'short') filterHtml += `<div class="badge-filter" style="background:#fee2e2; border-left:4px solid #ef4444;">แผ่นกรองฝุ่น: <b>ซีรีส์ R หรือ P เท่านั้น</b> (มีน้ำมัน)</div>`;
+                else filterHtml += `<div class="badge-filter" style="background:#dcfce7; border-left:4px solid #22c55e;">แผ่นกรองฝุ่น: <b>ซีรีส์ P เท่านั้น</b> (ทนน้ำมัน 100%)</div>`;
+            }
+            if (type === 'gas' || type === 'both') {
+                const g = gasColors[gas];
+                filterHtml += ` <div class="badge-filter" style="background:${g.bg}; color:${g.text}; border: 1px solid #ccc;">ตลับกรองแก๊ส: <b>${g.label} (แถบสี ${g.color})</b></div>`;
+            }
+            document.getElementById('filterRecommend').innerHTML = filterHtml;
+
+            renderRespirators(minApf, hr);
+        }
+
+        function renderRespirators(minApf, hr = 0) {
+            const list = document.getElementById('respiratorList');
+            list.innerHTML = '';
+            
+            const validRespirators = respirators.filter(r => r.apf >= minApf);
+            
+            if (validRespirators.length === 0) {
+                list.innerHTML = '<p class="text-danger">ไม่พบอุปกรณ์ที่รองรับระดับความเสี่ยงนี้</p>';
+                return;
+            }
+
+            validRespirators.forEach((r, index) => {
+                const div = document.createElement('div');
+                div.className = 'respirator-option';
+                div.innerHTML = `
+                    <div class="icon-box"><i class="bi ${r.icon}"></i></div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold">${r.name}</div>
+                        <div class="badge-apf">APF = ${r.apf}</div>
+                    </div>
+                    <i class="bi bi-circle"></i>
+                `;
+                div.onclick = () => selectRespirator(div, r.apf, hr);
+                list.appendChild(div);
+                
+                // Auto select first
+                if (index === 0) selectRespirator(div, r.apf, hr);
+            });
+        }
+
+        function selectRespirator(element, apf, hr) {
+            document.querySelectorAll('.respirator-option').forEach(el => {
+                el.classList.remove('selected');
+                el.querySelector('.bi-check-circle-fill')?.classList.replace('bi-check-circle-fill', 'bi-circle');
+            });
+            
+            element.classList.add('selected');
+            const icon = element.querySelector('.bi-circle');
+            if(icon) {
+                icon.classList.replace('bi-circle', 'bi-check-circle-fill');
+                icon.classList.add('text-success');
+            }
+            
+            currentApf = apf;
+            updateProtectionStatus(hr);
+        }
+
+        function updateProtectionStatus(hr) {
+            const statusDiv = document.getElementById('protectionStatus');
+            if (!currentApf || hr === 0) {
+                statusDiv.innerHTML = '<div class="small text-center text-muted">รอการประมวลผล...</div>';
+                statusDiv.style.background = 'rgba(255,255,255,0.5)';
+                statusDiv.style.borderColor = '#cbd5e1';
+                return;
+            }
+
+            const residual = hr / currentApf; // C_inside / OEL
+            
+            if (residual <= 1) {
+                statusDiv.innerHTML = `
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-shield-check text-success fs-3"></i>
+                        <div>
+                            <strong class="text-success">ปลอดภัย (Pass)</strong><br>
+                            <span class="small text-muted">สารเคมีเล็ดลอดเข้าหน้ากาก = ${(residual*100).toFixed(1)}% ของเกณฑ์มาตรฐาน (OEL)</span>
+                        </div>
+                    </div>
+                `;
+                statusDiv.style.background = '#f0fdf4';
+                statusDiv.style.borderColor = '#86efac';
+            } else {
+                statusDiv.innerHTML = `
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-shield-x text-danger fs-3"></i>
+                        <div>
+                            <strong class="text-danger">ไม่ปลอดภัย! (Fail)</strong><br>
+                            <span class="small text-muted">สารเคมีในหน้ากากเกินเกณฑ์ ${(residual).toFixed(2)} เท่า กรุณาเลือกรุ่นที่ APF สูงกว่านี้</span>
+                        </div>
+                    </div>
+                `;
+                statusDiv.style.background = '#fef2f2';
+                statusDiv.style.borderColor = '#fca5a5';
+            }
+        }
+
+        // Run once on load
+        window.onload = calculate;
+    </script>
+</body>
+</html>

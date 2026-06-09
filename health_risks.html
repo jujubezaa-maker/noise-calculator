@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSE Toolbox | ฐานข้อมูลปัจจัยเสี่ยง (ACGIH & กฎหมายไทย)</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        .table-responsive { background: white; border-radius: 0 0 0 0; padding: 10px; box-shadow: 0 -4px 10px rgba(0,0,0,0.05); max-height: 55vh; overflow-y: auto; }
+        .table { font-size: 0.8rem; margin-bottom: 0; }
+        th { background-color: #f8f9fa !important; position: sticky; top: 0; z-index: 10; font-size: 0.85rem; }
+        
+        .summary-panel { background: #f8f9fa; border-radius: 0 0 15px 15px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-top: 2px solid #dee2e6; }
+        .selected-item { border-left: 4px solid #3498db; background: #ffffff; padding: 8px 12px; margin-right: 10px; margin-bottom: 10px; border-radius: 5px; font-size: 0.8rem; position: relative; display: inline-block; min-width: 200px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .remove-btn { position: absolute; top: 5px; right: 8px; cursor: pointer; color: #e74c3c; font-size: 1rem; }
+        
+        .badge-custom { font-size: 0.65rem; padding: 4px 8px; border-radius: 4px; margin: 1px; display: inline-block; }
+        .badge-law { background-color: #dc3545; color: white; font-size: 0.65rem; padding: 3px 6px; border-radius: 3px; display: inline-flex; align-items: center; gap: 4px; margin-top: 5px; font-weight: bold; border: 1px solid #c82333; }
+        .notation-text { font-size: 0.7rem; color: #555; display: block; margin-top: 4px; padding: 4px; background: #f1f3f5; border-radius: 4px; border-left: 2px solid #adb5bd; }
+        .bei-box { font-size: 0.75rem; border-left: 3px solid #ffc107; padding: 6px 10px; background: #fffcf0; border-radius: 4px; margin-top: 5px; }
+        .search-container { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); padding: 15px; border-radius: 15px 15px 0 0; margin-bottom: 0; }
+        
+        /* Toggle Buttons */
+        .btn-group-toggle .btn { padding: 10px 20px; font-weight: bold; }
+        
+        @media print {
+            @page { margin: 1cm; }
+            body { background: white; color: black; font-family: 'Sarabun', sans-serif; }
+            .hero, .search-container, .table-responsive, .btn, .remove-btn, a, hr, .btn-group { display: none !important; }
+            .main-container { padding: 0 !important; }
+            .summary-panel { box-shadow: none; border: none; padding: 0; margin: 0; background: white; }
+            .summary-panel h6 { color: black !important; font-size: 12pt; border-bottom: 1px solid black; padding-bottom: 5px; }
+            .selected-item { background: transparent; border: 1px solid black; box-shadow: none; width: 100%; display: block; margin-bottom: 10px; page-break-inside: avoid; }
+            #totalTests { border: 1px solid black; padding: 10px; margin-bottom: 20px; }
+            #totalTests .badge { background-color: transparent !important; color: black !important; border: 1px solid black; padding: 5px; font-size: 10pt; font-weight: normal; margin-right: 5px; display: inline-block; }
+            .badge-law { background-color: transparent !important; color: black !important; border: 1px solid black; }
+        }
+    </style>
+</head>
+<body class="main-container">
+    <a href="index.html" class="text-white text-decoration-none mb-3 d-inline-block"><i class="bi bi-arrow-left-circle"></i> กลับหน้าแรก</a>
+    
+    <div class="hero mb-3">
+        <h1>🔍 ระบบสืบค้นปัจจัยเสี่ยงสารเคมี</h1>
+        <p class="subtitle">เลือกฐานข้อมูลที่ต้องการตรวจสอบ (ACGIH หรือ กฎหมายไทย)</p>
+    </div>
+
+    <!-- DB Toggle -->
+    <div class="btn-group btn-group-toggle w-100 mb-0 shadow-sm" role="group">
+        <input type="radio" class="btn-check" name="dbToggle" id="btnAcgih" autocomplete="off" checked onchange="switchMode('acgih')">
+        <label class="btn btn-outline-primary bg-white" for="btnAcgih"><i class="bi bi-heart-pulse"></i> แผนการตรวจสุขภาพ (ACGIH 2026)</label>
+
+        <input type="radio" class="btn-check" name="dbToggle" id="btnThaiLaw" autocomplete="off" onchange="switchMode('thailaw')">
+        <label class="btn btn-outline-danger bg-white" for="btnThaiLaw"><i class="bi bi-book"></i> กฎหมายบัญชีสารเคมีอันตราย (1,516 รายการ)</label>
+    </div>
+
+    <div class="search-container">
+        <input type="text" id="searchInput" class="form-control" placeholder="ค้นหาชื่อสารเคมี หรือเลข CAS No. ...">
+        <div id="stats" class="text-white-50 small mt-2 d-flex justify-content-between">
+            <span id="recordCount">กำลังโหลดฐานข้อมูล...</span>
+        </div>
+    </div>
+
+    <!-- Main Table -->
+    <div class="table-responsive">
+        <table class="table table-hover align-middle" id="mainTable">
+            <thead id="tableHead">
+                <!-- Headers injected via JS -->
+            </thead>
+            <tbody id="tableBody">
+                <tr><td colspan="6" class="text-center py-5">กำลังเตรียมข้อมูล...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Bottom Summary Panel (Only visible in ACGIH mode) -->
+    <div class="summary-panel" id="summaryPanel">
+        <div class="row">
+            <div class="col-md-7 border-end pe-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="m-0 fw-bold text-primary"><i class="bi bi-cart-check"></i> สารเคมีที่เลือกประเมินสุขภาพ (<span id="count">0</span>)</h6>
+                    <button class="btn btn-sm btn-outline-danger py-0" onclick="clearAll()" id="clearBtn" style="display:none;">ล้างทั้งหมด</button>
+                </div>
+                <div id="selectedList" class="d-flex flex-wrap align-items-start" style="min-height: 50px;">
+                    <p class="text-muted small italic w-100 mt-2">ยังไม่ได้เลือกสารเคมี</p>
+                </div>
+            </div>
+            
+            <div class="col-md-5 ps-4">
+                <h6 class="fw-bold text-danger mb-3"><i class="bi bi-heart-pulse"></i> แผนการตรวจสุขภาพรวม (Medical Plan):</h6>
+                <div id="totalTests" class="d-flex flex-wrap gap-2 mb-3">
+                    <span class="text-muted small">รอการเลือกสารเคมี...</span>
+                </div>
+                <button class="btn btn-primary w-100" onclick="window.print()"><i class="bi bi-printer"></i> พิมพ์รายงานสรุป</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let acgihData = [];
+        let thaiLawDataList = [];
+        let thaiLawSet = new Set(); // For quick cross-reference in ACGIH mode
+        let selectedChemicals = [];
+        let currentMode = 'acgih'; // 'acgih' or 'thailaw'
+        
+        const acgihPath = 'ACGIH_2026_Database_v10.csv';
+        const thaiLawPath = 'thaichemical_list_1516.csv';
+
+        function loadData() {
+            // Load Thai Law Data First
+            Papa.parse(thaiLawPath, {
+                download: true, header: true, skipEmptyLines: true,
+                complete: function(results) {
+                    thaiLawDataList = results.data;
+                    results.data.forEach(item => {
+                        if (item['CAS No'] && item['CAS No'] !== '-') {
+                            thaiLawSet.add(item['CAS No']);
+                        }
+                    });
+                    
+                    // Then load ACGIH Data
+                    Papa.parse(acgihPath, {
+                        download: true, header: true, skipEmptyLines: true,
+                        complete: function(res2) {
+                            acgihData = res2.data;
+                            switchMode('acgih'); // Initialize display
+                        }
+                    });
+                }
+            });
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            document.getElementById('searchInput').value = ''; // clear search
+            
+            const thead = document.getElementById('tableHead');
+            const summaryPanel = document.getElementById('summaryPanel');
+            
+            if (mode === 'acgih') {
+                thead.innerHTML = `
+                    <tr>
+                        <th style="width: 60px;" class="text-center">เลือก</th>
+                        <th style="width: 25%;">ชื่อสารเคมี / CAS / กฎหมาย</th>
+                        <th style="width: 15%;">ขีดจำกัด (TWA/STEL)</th>
+                        <th style="width: 15%;">อวัยวะที่กระทบ</th>
+                        <th style="width: 20%;">Biological (BEI)</th>
+                        <th style="width: 20%;">ตรวจสุขภาพแนะนำ</th>
+                    </tr>
+                `;
+                summaryPanel.style.display = 'block';
+                document.getElementById('searchInput').placeholder = "ค้นหาชื่อสารเคมี หรือเลข CAS No. (อ้างอิง ACGIH)...";
+                displayData(acgihData);
+            } else {
+                thead.innerHTML = `
+                    <tr>
+                        <th style="width: 10%;" class="text-center">ลำดับที่</th>
+                        <th style="width: 35%;">ชื่อสารเคมี (ภาษาไทย)</th>
+                        <th style="width: 35%;">ชื่อสารเคมี (ภาษาอังกฤษ)</th>
+                        <th style="width: 20%;">CAS No.</th>
+                    </tr>
+                `;
+                summaryPanel.style.display = 'none'; // Hide summary in law mode
+                document.getElementById('searchInput').placeholder = "ค้นหาชื่อสารเคมี หรือเลข CAS No. ในบัญชี 1,516 รายการ...";
+                displayData(thaiLawDataList);
+            }
+        }
+
+        function displayData(data) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            const displayList = data.slice(0, 150); // Show first 150 items
+            document.getElementById('recordCount').innerText = `กำลังแสดงข้อมูล ${data.length} รายการ`;
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="${currentMode === 'acgih' ? 6 : 4}" class="text-center py-4">ไม่พบข้อมูลที่ค้นหา</td></tr>`;
+                return;
+            }
+
+            displayList.forEach(item => {
+                const row = document.createElement('tr');
+                
+                if (currentMode === 'acgih') {
+                    // ACGIH Rendering
+                    const cas = item['เลข CAS No.'];
+                    const isSelected = selectedChemicals.some(c => c['เลข CAS No.'] === cas);
+                    const isControlled = thaiLawSet.has(cas);
+                    const lawBadge = isControlled ? `<div class="badge-law mt-1"><i class="bi bi-exclamation-triangle-fill"></i> กฎหมายไทย</div>` : '';
+
+                    let beiHtml = '—';
+                    if (item['ค่าขีดจำกัดชีวภาพ (BEI Value)'] && item['ค่าขีดจำกัดชีวภาพ (BEI Value)'] !== '—') {
+                        const dets = item['รายการตรวจวัดทางชีวภาพ (Biological Determinant)'].split(' | ');
+                        const specs = item['สิ่งส่งตรวจ (Specimen)'].split(' | ');
+                        const times = item['เวลาเก็บตัวอย่าง (Sampling Time)'].split(' | ');
+                        const vals = item['ค่าขีดจำกัดชีวภาพ (BEI Value)'].split(' | ');
+                        const units = item['หน่วย BEI'].split(' | ');
+
+                        beiHtml = dets.map((d, i) => `
+                            <div class="bei-box">
+                                <strong>${d}</strong><br>
+                                <div class="text-muted" style="font-size:0.65rem; margin-top:2px;">📍 ${specs[i] || ''} | 🕒 ${times[i] || ''}</div>
+                                <span class="badge bg-warning text-dark mt-1" style="font-size:0.65rem;">${vals[i] || ''} ${units[i] || ''}</span>
+                            </div>
+                        `).join('');
+                    }
+
+                    let medStr = item['คำแนะนำการตรวจสุขภาพ (Medical Surveillance)'] || '';
+                    const testBadges = medStr.split(', ').map(t => {
+                        let c = 'bg-primary';
+                        if(t.includes('CXR')) c = 'bg-danger';
+                        if(t.includes('BEI')) c = 'bg-warning text-dark';
+                        if(t.includes('ตับ') || t.includes('ไต')) c = 'bg-info text-dark';
+                        return `<span class="badge badge-custom ${c}">${t}</span>`;
+                    }).join(' ');
+
+                    const notStr = item['หมายเหตุ (Notation - ขยายความแล้ว)'] || '—';
+                    const notHtml = notStr !== '—' ? `<div class="notation-text">${notStr.replace(/ \| /g, '<br>')}</div>` : '';
+
+                    row.innerHTML = `
+                        <td class="text-center">
+                            <button class="btn btn-sm ${isSelected ? 'btn-success' : 'btn-outline-primary'}" 
+                                    onclick='toggleSelect(${JSON.stringify(item).replace(/'/g, "&apos;")}, ${isControlled})'>
+                                <i class="bi ${isSelected ? 'bi-check-circle-fill' : 'bi-plus'}"></i>
+                            </button>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-primary">${item['ชื่อสารเคมี (Substance)']}</div>
+                            <div class="text-muted extra-small">CAS: ${cas}</div>
+                            ${lawBadge}
+                            ${notHtml}
+                        </td>
+                        <td>
+                            <div class="mb-1"><span class="badge bg-success" style="font-size:0.65rem;">TWA: ${item['ค่า TLV-TWA']} ${item['หน่วย TWA'] !== '—' ? item['หน่วย TWA'] : ''}</span></div>
+                            ${item['ค่า TLV-STEL/C'] !== '—' ? `<div><span class="badge bg-secondary" style="font-size:0.65rem;">STEL/C: ${item['ค่า TLV-STEL/C']} ${item['หน่วย STEL/C'] !== '—' ? item['หน่วย STEL/C'] : ''}</span></div>` : ''}
+                        </td>
+                        <td>
+                            <div class="fw-bold text-danger" style="font-size:0.75rem;">${item['อวัยวะที่ได้รับผลกระทบ (Target Organs)']}</div>
+                            <div class="text-muted extra-small mt-1" style="font-size:0.65rem;">${item['ผลกระทบต่อสุขภาพ (TLV Basis)']}</div>
+                        </td>
+                        <td>${beiHtml}</td>
+                        <td>${testBadges}</td>
+                    `;
+                } else {
+                    // Thai Law Rendering
+                    row.innerHTML = `
+                        <td class="text-center fw-bold text-danger">${item['ลำดับ']}</td>
+                        <td class="fw-bold">${item['ชื่อสารเคมี (ไทย)']}</td>
+                        <td class="text-muted">${item['ชื่อสารเคมี (อังกฤษ)']}</td>
+                        <td><span class="badge bg-light text-dark border">${item['CAS No']}</span></td>
+                    `;
+                }
+                tbody.appendChild(row);
+            });
+        }
+
+        function toggleSelect(item, isControlled) {
+            const index = selectedChemicals.findIndex(c => c.data['เลข CAS No.'] === item['เลข CAS No.']);
+            if (index > -1) {
+                selectedChemicals.splice(index, 1);
+            } else {
+                selectedChemicals.push({ data: item, isControlled: isControlled });
+            }
+            updateSummary();
+            refreshTable();
+            
+            if (index === -1) {
+                document.getElementById('summaryPanel').scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }
+        }
+
+        function updateSummary() {
+            const listDiv = document.getElementById('selectedList');
+            const testDiv = document.getElementById('totalTests');
+            const countSpan = document.getElementById('count');
+            const clearBtn = document.getElementById('clearBtn');
+            
+            listDiv.innerHTML = '';
+            countSpan.innerText = selectedChemicals.length;
+            clearBtn.style.display = selectedChemicals.length > 0 ? 'block' : 'none';
+
+            if (selectedChemicals.length === 0) {
+                listDiv.innerHTML = '<p class="text-muted small italic w-100 mt-2">ยังไม่ได้เลือกสารเคมี</p>';
+                testDiv.innerHTML = '<span class="text-muted small">รอการเลือกสารเคมี...</span>';
+                return;
+            }
+
+            let allTests = new Set();
+            selectedChemicals.forEach(cObj => {
+                const c = cObj.data;
+                const isControlled = cObj.isControlled;
+                
+                const div = document.createElement('div');
+                div.className = 'selected-item';
+                div.innerHTML = `
+                    <strong class="text-primary">${c['ชื่อสารเคมี (Substance)']}</strong><br>
+                    <small class="text-muted">CAS: ${c['เลข CAS No.']}</small><br>
+                    ${isControlled ? '<span class="badge-law mt-1" style="font-size:0.55rem; padding: 2px 4px;"><i class="bi bi-exclamation-triangle"></i> กฎหมายควบคุม</span><br>' : ''}
+                    <i class="bi bi-x-circle remove-btn" onclick='removeById("${c['เลข CAS No.']}")'></i>
+                `;
+                listDiv.appendChild(div);
+
+                if(c['คำแนะนำการตรวจสุขภาพ (Medical Surveillance)']) {
+                    c['คำแนะนำการตรวจสุขภาพ (Medical Surveillance)'].split(', ').forEach(t => allTests.add(t));
+                }
+            });
+
+            testDiv.innerHTML = '';
+            Array.from(allTests).sort().forEach(t => {
+                const badge = document.createElement('span');
+                badge.className = 'badge bg-primary p-2 shadow-sm';
+                badge.style.fontSize = '0.8rem';
+                badge.innerText = t;
+                testDiv.appendChild(badge);
+            });
+        }
+
+        function removeById(cas) {
+            selectedChemicals = selectedChemicals.filter(c => c.data['เลข CAS No.'] !== cas);
+            updateSummary();
+            refreshTable();
+        }
+
+        function clearAll() {
+            selectedChemicals = [];
+            updateSummary();
+            refreshTable();
+        }
+
+        function refreshTable() {
+            const s = document.getElementById('searchInput').value.toLowerCase();
+            const sourceData = currentMode === 'acgih' ? acgihData : thaiLawDataList;
+            
+            const filtered = sourceData.filter(i => {
+                if (currentMode === 'acgih') {
+                    const name = i['ชื่อสารเคมี (Substance)'] ? i['ชื่อสารเคมี (Substance)'].toLowerCase() : '';
+                    const cas = i['เลข CAS No.'] ? i['เลข CAS No.'].toLowerCase() : '';
+                    return name.includes(s) || cas.includes(s);
+                } else {
+                    const nameTh = i['ชื่อสารเคมี (ไทย)'] ? i['ชื่อสารเคมี (ไทย)'].toLowerCase() : '';
+                    const nameEn = i['ชื่อสารเคมี (อังกฤษ)'] ? i['ชื่อสารเคมี (อังกฤษ)'].toLowerCase() : '';
+                    const cas = i['CAS No'] ? i['CAS No'].toLowerCase() : '';
+                    return nameTh.includes(s) || nameEn.includes(s) || cas.includes(s);
+                }
+            });
+            displayData(filtered);
+        }
+
+        document.getElementById('searchInput').addEventListener('input', refreshTable);
+        window.onload = loadData;
+    </script>
+</body>
+</html>

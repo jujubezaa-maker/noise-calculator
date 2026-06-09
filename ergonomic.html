@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSE Toolbox | วิเคราะห์การยศาสตร์ (Ergonomics)</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; color: #2c3e50; }
+        .hero { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; padding: 2rem; border-radius: 15px; margin-bottom: 2rem; }
+        .hero h1 { font-weight: 700; margin-bottom: 0.5rem; font-size: 2rem; }
+        .hero .subtitle { color: #94a3b8; font-size: 1rem; margin-bottom: 0; }
+        
+        .desktop-layout { display: grid; grid-template-columns: 1fr 400px; gap: 20px; }
+        @media (max-width: 991px) { .desktop-layout { grid-template-columns: 1fr; } }
+        
+        .card { border: none; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; overflow: hidden; }
+        .card-header { background-color: white; border-bottom: 1px solid #edf2f7; padding: 1.2rem 1.5rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .card-body { padding: 1.5rem; }
+        
+        .form-label { font-weight: 500; color: #475569; font-size: 0.9rem; margin-bottom: 0.3rem; }
+        .form-select, .form-control { border: 2px solid #e2e8f0; border-radius: 8px; padding: 0.5rem 0.8rem; font-size: 0.9rem; }
+        .form-select:focus, .form-control:focus { border-color: #10b981; box-shadow: none; }
+        
+        .nav-tabs { border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; }
+        .nav-tabs .nav-link { color: #64748b; font-weight: 600; border: none; border-bottom: 3px solid transparent; padding: 10px 20px; }
+        .nav-tabs .nav-link:hover { color: #10b981; border-color: transparent; }
+        .nav-tabs .nav-link.active { color: #10b981; border-color: #10b981; background: transparent; }
+        
+        .form-section { background: #f8fafc; border-radius: 12px; padding: 15px; margin-bottom: 20px; border: 1px solid #e2e8f0; }
+        .form-section h6 { font-weight: 700; color: #1e293b; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #e2e8f0; }
+        
+        .posture-img { background: white; border-radius: 10px; padding: 10px; text-align: center; margin-bottom: 15px; border: 1px dashed #cbd5e1; }
+        .posture-img svg { max-width: 100%; height: auto; }
+        .posture-img .caption { font-size: 0.75rem; font-weight: 600; color: #475569; margin-top: 5px; }
+        
+        .angle-badge { background: #e0f2fe; color: #0284c7; padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; margin-left: 5px; }
+        
+        .result-panel { background: #f0fdf4; border: 2px solid #bbf7d0; border-radius: 15px; padding: 1.5rem; position: sticky; top: 20px; }
+        .score-card { background: white; border-radius: 12px; padding: 20px; text-align: center; border: 1px solid #e2e8f0; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        .risk-score { font-size: 3.5rem; font-weight: 800; margin: 10px 0; color: #0f172a; line-height: 1; }
+        
+        .result-badge { padding: 8px 20px; border-radius: 30px; font-weight: bold; font-size: 0.9rem; display: inline-block; width: 100%; }
+        .level-1 { background: #22c55e; color: white; }
+        .level-2 { background: #84cc16; color: white; }
+        .level-3 { background: #facc15; color: #000; }
+        .level-4 { background: #f97316; color: white; }
+        .level-5 { background: #ef4444; color: white; }
+        .level-6 { background: #7c2d12; color: white; }
+        .level-7 { background: #450a0a; color: white; }
+        
+        .action-card { background: white; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 12px; margin-top: 15px; text-align: left; font-size: 0.85rem; border-top: 1px solid #eee; border-right: 1px solid #eee; border-bottom: 1px solid #eee; }
+        
+        @media print {
+            body { background: white; }
+            .no-print, .hero { display: none !important; }
+            .desktop-layout { display: block; }
+            .result-panel { border: 1px solid #000; background: transparent; position: relative; }
+        }
+    </style>
+</head>
+<body class="container-fluid py-4">
+
+    <a href="index.html" class="btn btn-outline-secondary mb-3 no-print"><i class="bi bi-arrow-left"></i> กลับหน้าหลัก</a>
+
+    <div class="hero no-print">
+        <h1><i class="bi bi-person-walking"></i> วิเคราะห์การยศาสตร์ (Ergonomics)</h1>
+        <p class="subtitle">ประเมินความเสี่ยงท่าทางการทำงานด้วยเครื่องมือมาตรฐานสากล RULA & REBA</p>
+    </div>
+
+    <ul class="nav nav-tabs no-print" id="ergoTab" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" id="rula-tab" data-bs-toggle="tab" data-bs-target="#rula" type="button" role="tab">
+                <i class="bi bi-arrow-up-circle"></i> RULA (เน้นร่างกายส่วนบน)
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="reba-tab" data-bs-toggle="tab" data-bs-target="#reba" type="button" role="tab">
+                <i class="bi bi-person-arms-up"></i> REBA (ประเมินทั้งร่างกาย)
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="ergoTabContent">
+        <!-- RULA Tab -->
+        <div class="tab-pane fade show active" id="rula" role="tabpanel">
+            <div class="desktop-layout">
+                <!-- RULA Form -->
+                <div class="input-section">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white"><i class="bi bi-clipboard-check"></i> ข้อมูลการประเมิน RULA</div>
+                        <div class="card-body">
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-4">
+                                    <label class="form-label">แผนก/หน่วยงาน</label>
+                                    <input type="text" class="form-control" placeholder="ระบุแผนก">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">ลักษณะงาน</label>
+                                    <input type="text" class="form-control" placeholder="ระบุงาน">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">ผู้ปฏิบัติงาน</label>
+                                    <input type="text" class="form-control" placeholder="ชื่อพนักงาน">
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <!-- Section A -->
+                                <div class="col-md-6">
+                                    <div class="form-section">
+                                        <h6><i class="bi bi-hand-index-thumb text-primary"></i> A. Arm and Wrist Analysis</h6>
+                                        <div class="posture-img">
+                                            <div class="row g-1">
+                                                <div class="col-4" id="img-upper-arm"></div>
+                                                <div class="col-4" id="img-lower-arm"></div>
+                                                <div class="col-4" id="img-wrist"></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Step 1: Upper Arm <span class="angle-badge">วัดจากลำตัวดิ่ง</span></label>
+                                            <select class="form-select rula-input" id="r_upper">
+                                                <option value="1">1 : 20° ถึง 45° งอ</option>
+                                                <option value="2">2 : 45° ถึง 90° งอ</option>
+                                                <option value="3">3 : > 90° งอ</option>
+                                                <option value="4">4 : ยกไหล่ / แขนพาดหลัง</option>
+                                            </select>
+                                        </div>
+                                        <div class="row g-2 mb-3">
+                                            <div class="col-4"><select class="form-select rula-input" id="r_raised"><option value="0">ไม่ยกไหล่ (0)</option><option value="1">ยกไหล่ (+1)</option></select></div>
+                                            <div class="col-4"><select class="form-select rula-input" id="r_abduct"><option value="0">ไม่กาง (0)</option><option value="1">กางแขน (+1)</option></select></div>
+                                            <div class="col-4"><select class="form-select rula-input" id="r_support"><option value="0">ไม่มีพิง (0)</option><option value="-1">มีที่พิง (-1)</option></select></div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Step 2: Lower Arm</label>
+                                            <select class="form-select rula-input" id="r_lower">
+                                                <option value="1">1 : 60° ถึง 100°</option>
+                                                <option value="2">2 : < 60° หรือ > 100°</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <select class="form-select rula-input" id="r_midline">
+                                                <option value="0">ไม่ข้าม midline (0)</option>
+                                                <option value="1">ทำงานข้าม/ออกนอกตัว (+1)</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Step 3: Wrist Position</label>
+                                            <select class="form-select rula-input" id="r_wrist">
+                                                <option value="1">1 : 0° ถึง 15° งอ</option>
+                                                <option value="2">2 : > 15° งอ</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <select class="form-select rula-input" id="r_wrist_bend">
+                                                <option value="0">ไม่งอเอียงข้าง (0)</option>
+                                                <option value="1">งอเอียงข้าง (+1)</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Step 4: Wrist Twist</label>
+                                            <select class="form-select rula-input" id="r_wrist_twist">
+                                                <option value="0">0 : ไม่บิด</option>
+                                                <option value="1">1 : บิดระดับกลาง</option>
+                                                <option value="2">2 : บิดสุดช่วง</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <hr>
+                                        <h6><i class="bi bi-activity text-primary"></i> Muscle & Force (A)</h6>
+                                        <div class="mb-3">
+                                            <label class="form-label">Step 6: Muscle Use</label>
+                                            <select class="form-select rula-input" id="r_musc_a">
+                                                <option value="0">ไม่คงที่/ไม่ซ้ำบ่อย (0)</option>
+                                                <option value="1">ท่าคงที่ >10นาที หรือซ้ำ >4ครั้ง/นาที (+1)</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label">Step 7: Force/Load</label>
+                                            <select class="form-select rula-input" id="r_force_a">
+                                                <option value="0">0 : < 2 กก. (ชั่วคราว)</option>
+                                                <option value="1">1 : 2-10 กก. (ชั่วคราว)</option>
+                                                <option value="2">2 : 2-10 กก. (ซ้ำๆ)</option>
+                                                <option value="3">3 : > 10 กก. หรือมีแรงกระแทก</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Section B -->
+                                <div class="col-md-6">
+                                    <div class="form-section">
+                                        <h6><i class="bi bi-person-standing text-primary"></i> B. Neck, Trunk and Leg Analysis</h6>
+                                        <div class="posture-img">
+                                            <div class="row g-1">
+                                                <div class="col-6" id="img-neck"></div>
+                                                <div class="col-6" id="img-trunk"></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Step 9: Neck Position</label>
+                                            <select class="form-select rula-input" id="r_neck">
+                                                <option value="1">1 : 0-10° ก้มเล็กน้อย</option>
+                                                <option value="2">2 : 10-20° ก้มปานกลาง</option>
+                                                <option value="3">3 : > 20° ก้มมาก</option>
+                                                <option value="4">4 : แหงนคอ</option>
+                                            </select>
+                                        </div>
+                                        <div class="row g-2 mb-3">
+                                            <div class="col-6"><select class="form-select rula-input" id="r_neck_twist"><option value="0">ไม่บิด (0)</option><option value="1">บิด (+1)</option></select></div>
+                                            <div class="col-6"><select class="form-select rula-input" id="r_neck_side"><option value="0">ไม่เอียง (0)</option><option value="1">เอียง (+1)</option></select></div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Step 10: Trunk Position</label>
+                                            <select class="form-select rula-input" id="r_trunk">
+                                                <option value="1">1 : 0-10° เกือบตรง</option>
+                                                <option value="2">2 : 10-20° ก้มเล็กน้อย</option>
+                                                <option value="3">3 : 20-60° ก้มปานกลาง</option>
+                                                <option value="4">4 : > 60° ก้มมาก</option>
+                                            </select>
+                                        </div>
+                                        <div class="row g-2 mb-3">
+                                            <div class="col-6"><select class="form-select rula-input" id="r_trunk_twist"><option value="0">ไม่บิด (0)</option><option value="1">บิด (+1)</option></select></div>
+                                            <div class="col-6"><select class="form-select rula-input" id="r_trunk_side"><option value="0">ไม่เอียง (0)</option><option value="1">เอียง (+1)</option></select></div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Step 11: Legs</label>
+                                            <select class="form-select rula-input" id="r_legs">
+                                                <option value="1">1 : ขา/เท้ามีที่รองรับ (นั่ง/ยืนมั่นคง)</option>
+                                                <option value="2">2 : ขา/เท้าไม่มีที่รองรับสมดุล</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <hr>
+                                        <h6><i class="bi bi-activity text-primary"></i> Muscle & Force (B)</h6>
+                                        <div class="mb-3">
+                                            <label class="form-label">Step 13: Muscle Use</label>
+                                            <select class="form-select rula-input" id="r_musc_b">
+                                                <option value="0">ไม่คงที่/ไม่ซ้ำบ่อย (0)</option>
+                                                <option value="1">ท่าคงที่ >10นาที หรือซ้ำ >4ครั้ง/นาที (+1)</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label">Step 14: Force/Load</label>
+                                            <select class="form-select rula-input" id="r_force_b">
+                                                <option value="0">0 : < 2 กก. (ชั่วคราว)</option>
+                                                <option value="1">1 : 2-10 กก. (ชั่วคราว)</option>
+                                                <option value="2">2 : 2-10 กก. (ซ้ำๆ)</option>
+                                                <option value="3">3 : > 10 กก. หรือมีแรงกระแทก</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RULA Result -->
+                <div>
+                    <div class="result-panel">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="fw-bold m-0"><i class="bi bi-clipboard-data text-primary"></i> ผลประเมิน RULA</h5>
+                            <button class="btn btn-sm btn-primary no-print" onclick="window.print()"><i class="bi bi-printer"></i> พิมพ์</button>
+                        </div>
+                        
+                        <div class="score-card">
+                            <div class="text-muted fw-bold text-uppercase small">Grand Score</div>
+                            <div class="risk-score" id="rula_score">-</div>
+                            <div id="rula_level"></div>
+                        </div>
+                        
+                        <div class="action-card">
+                            <div class="fw-bold text-dark mb-1"><i class="bi bi-lightbulb"></i> ข้อแนะนำ:</div>
+                            <div id="rula_action">รอการประเมิน...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- REBA Tab -->
+        <div class="tab-pane fade" id="reba" role="tabpanel">
+            <div class="desktop-layout">
+                <!-- REBA Form -->
+                <div class="input-section">
+                    <div class="card">
+                        <div class="card-header bg-success text-white"><i class="bi bi-clipboard-check"></i> ข้อมูลการประเมิน REBA</div>
+                        <div class="card-body">
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-4"><label class="form-label">แผนก</label><input type="text" class="form-control"></div>
+                                <div class="col-md-4"><label class="form-label">ลักษณะงาน</label><input type="text" class="form-control"></div>
+                                <div class="col-md-4"><label class="form-label">พนักงาน</label><input type="text" class="form-control"></div>
+                            </div>
+                            
+                            <div class="row">
+                                <!-- Section A -->
+                                <div class="col-md-6">
+                                    <div class="form-section">
+                                        <h6><i class="bi bi-people text-success"></i> A. Neck, Trunk, Legs</h6>
+                                        <div class="mb-3">
+                                            <label class="form-label">Neck</label>
+                                            <select class="form-select reba-input" id="re_neck"><option value="1">1 : 0-20°</option><option value="2">2 : >20° หรือเหยียด</option></select>
+                                        </div>
+                                        <div class="row g-2 mb-3">
+                                            <div class="col-6"><select class="form-select reba-input" id="re_neck_t"><option value="0">ไม่บิด (0)</option><option value="1">บิด (+1)</option></select></div>
+                                            <div class="col-6"><select class="form-select reba-input" id="re_neck_s"><option value="0">ไม่เอียง (0)</option><option value="1">เอียง (+1)</option></select></div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Trunk</label>
+                                            <select class="form-select reba-input" id="re_trunk"><option value="1">1 : ตรง</option><option value="2">2 : 0-20°</option><option value="3">3 : 20-60°</option><option value="4">4 : >60°</option></select>
+                                        </div>
+                                        <div class="row g-2 mb-3">
+                                            <div class="col-6"><select class="form-select reba-input" id="re_trunk_t"><option value="0">ไม่บิด (0)</option><option value="1">บิด (+1)</option></select></div>
+                                            <div class="col-6"><select class="form-select reba-input" id="re_trunk_s"><option value="0">ไม่เอียง (0)</option><option value="1">เอียง (+1)</option></select></div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Legs</label>
+                                            <select class="form-select reba-input" id="re_legs"><option value="1">1 : นั่ง/เดิน</option><option value="2">2 : ยืน/ขาเดียว</option><option value="3">3 : กึ่งย่อ/เดินไม่ได้</option></select>
+                                        </div>
+                                        <hr>
+                                        <div class="mb-2">
+                                            <label class="form-label">Force/Load</label>
+                                            <select class="form-select reba-input" id="re_load"><option value="0">0 : < 5 กก.</option><option value="1">1 : 5-10 กก.</option><option value="2">2 : > 10 กก.</option><option value="3">3 : มีแรงกระแทก</option></select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Section B -->
+                                <div class="col-md-6">
+                                    <div class="form-section">
+                                        <h6><i class="bi bi-arms-up text-success"></i> B. Arm & Wrist</h6>
+                                        <div class="mb-3">
+                                            <label class="form-label">Upper Arm</label>
+                                            <select class="form-select reba-input" id="re_upper"><option value="1">1 : 20-45°</option><option value="2">2 : 45-90°</option><option value="3">3 : >90°</option><option value="4">4 : ยกไหล่/พาดหลัง</option></select>
+                                        </div>
+                                        <div class="row g-2 mb-3">
+                                            <div class="col-6"><select class="form-select reba-input" id="re_up_r"><option value="0">ไม่ยกไหล่ (0)</option><option value="1">ยก (+1)</option></select></div>
+                                            <div class="col-6"><select class="form-select reba-input" id="re_up_a"><option value="0">ไม่กาง (0)</option><option value="1">กาง (+1)</option></select></div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Lower Arm</label>
+                                            <select class="form-select reba-input" id="re_lower"><option value="1">1 : 60-100°</option><option value="2">2 : <60° หรือ >100°</option></select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Wrist</label>
+                                            <select class="form-select reba-input" id="re_wrist"><option value="1">1 : 0-15°</option><option value="2">2 : >15°</option></select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <select class="form-select reba-input" id="re_wrist_b"><option value="0">ไม่บิด/เฉียง (0)</option><option value="1">บิด/เฉียง (+1)</option></select>
+                                        </div>
+                                        <hr>
+                                        <div class="mb-3">
+                                            <label class="form-label">Coupling (การจับ)</label>
+                                            <select class="form-select reba-input" id="re_coup"><option value="0">0 : จับดี</option><option value="1">1 : จับพอใช้</option><option value="2">2 : จับยาก</option><option value="3">3 : จับไม่ได้/ไม่ปลอดภัย</option></select>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label">Activity</label>
+                                            <select class="form-select reba-input" id="re_act"><option value="0">0 : ปกติ</option><option value="1">1 : ท่าคงที่ >1นาที</option><option value="2">2 : ซ้ำ >4ครั้ง/นาที</option><option value="3">3 : เปลี่ยนเร็ว/กว้าง/ไม่มั่นคง</option></select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- REBA Result -->
+                <div>
+                    <div class="result-panel" style="background:#f0fdf4; border-color:#bbf7d0;">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="fw-bold m-0"><i class="bi bi-clipboard-data text-success"></i> ผลประเมิน REBA</h5>
+                            <button class="btn btn-sm btn-success no-print" onclick="window.print()"><i class="bi bi-printer"></i> พิมพ์</button>
+                        </div>
+                        
+                        <div class="score-card">
+                            <div class="text-muted fw-bold text-uppercase small">REBA Score</div>
+                            <div class="risk-score" id="reba_score" style="color: #166534;">-</div>
+                            <div id="reba_level"></div>
+                        </div>
+                        
+                        <div class="action-card" style="border-left-color: #22c55e; background: white;">
+                            <div class="fw-bold text-dark mb-1"><i class="bi bi-lightbulb"></i> ข้อแนะนำ:</div>
+                            <div id="reba_action">รอการประเมิน...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function drawSVG() {
+        if(document.getElementById('img-upper-arm')) {
+            document.getElementById('img-upper-arm').innerHTML = `<svg viewBox="0 0 100 100" width="100%" height="80"><line x1="35" y1="15" x2="35" y2="90" stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="3,3"/><path d="M 35 30 L 65 65" stroke="#3b82f6" stroke-width="5" stroke-linecap="round"/><circle cx="35" cy="30" r="4" fill="#475569"/><caption style="display:none">Upper Arm</caption></svg><div class="caption">แขนบน</div>`;
+            document.getElementById('img-lower-arm').innerHTML = `<svg viewBox="0 0 100 100" width="100%" height="80"><line x1="30" y1="55" x2="90" y2="55" stroke="#94a3b8" stroke-width="2" stroke-dasharray="2,2"/><line x1="30" y1="20" x2="30" y2="55" stroke="#cbd5e1" stroke-width="4"/><line x1="30" y1="55" x2="75" y2="25" stroke="#3b82f6" stroke-width="5" stroke-linecap="round"/><circle cx="30" cy="55" r="4" fill="#475569"/></svg><div class="caption">แขนล่าง</div>`;
+            document.getElementById('img-wrist').innerHTML = `<svg viewBox="0 0 120 70" width="100%" height="80"><line x1="15" y1="35" x2="105" y2="35" stroke="#94a3b8" stroke-width="2" stroke-dasharray="2,2"/><rect x="15" y="30" width="45" height="10" fill="#cbd5e1" rx="2"/><line x1="60" y1="35" x2="95" y2="15" stroke="#3b82f6" stroke-width="4.5" stroke-linecap="round"/><circle cx="60" cy="35" r="3.5" fill="#475569"/></svg><div class="caption">ข้อมือ</div>`;
+            document.getElementById('img-neck').innerHTML = `<svg viewBox="0 0 100 100" width="100%" height="80"><line x1="50" y1="20" x2="50" y2="85" stroke="#94a3b8" stroke-width="2" stroke-dasharray="3,3"/><line x1="50" y1="65" x2="38" y2="35" stroke="#3b82f6" stroke-width="4.5" stroke-linecap="round"/><circle cx="34" cy="24" r="10" fill="#cbd5e1" stroke="#475569" stroke-width="1.5"/><circle cx="50" cy="65" r="3.5" fill="#475569"/></svg><div class="caption">คอ</div>`;
+            document.getElementById('img-trunk').innerHTML = `<svg viewBox="0 0 100 110" width="100%" height="80"><line x1="50" y1="15" x2="50" y2="95" stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="3,3"/><line x1="50" y1="85" x2="25" y2="35" stroke="#3b82f6" stroke-width="6" stroke-linecap="round"/><circle cx="50" cy="85" r="4" fill="#475569"/></svg><div class="caption">ลำตัว</div>`;
+        }
+    }
+
+    function calcRULA() {
+        const getV = id => parseInt(document.getElementById(id).value) || 0;
+        
+        let upper = getV('r_upper') || 1;
+        let raised = getV('r_raised');
+        let abduct = getV('r_abduct');
+        let support = getV('r_support');
+        let upperScore = Math.min(7, Math.max(1, upper + raised + abduct + support));
+        
+        let lowerScore = (getV('r_lower')||1) + getV('r_midline');
+        let wristScore = (getV('r_wrist')||1) + getV('r_wrist_bend');
+        let wristTwist = getV('r_wrist_twist');
+        
+        let tableA = [[1,2,2,3,3],[2,2,3,3,4],[3,3,4,4,5],[3,4,4,5,5],[4,4,5,5,6],[4,5,5,6,6],[5,5,6,6,7],[5,6,6,7,7]];
+        let postureA = tableA[Math.min(upperScore,7)-1][Math.min(wristScore,4)];
+        let armScore = postureA + getV('r_musc_a') + getV('r_force_a');
+        
+        let neckScore = Math.min(4, (getV('r_neck')||1) + getV('r_neck_twist') + getV('r_neck_side'));
+        let trunkScore = Math.min(4, (getV('r_trunk')||1) + getV('r_trunk_twist') + getV('r_trunk_side'));
+        let legs = getV('r_legs') || 1;
+        
+        let tableB = [[1,2,3,4,5,6,7],[2,3,4,5,6,7,8],[3,4,5,6,7,8,9],[4,5,6,7,8,9,9]];
+        let postureB = tableB[neckScore-1][trunkScore-1];
+        if (legs === 2) postureB += 1;
+        let neckTrunkScore = postureB + getV('r_musc_b') + getV('r_force_b');
+        
+        let tableC = [
+            [1,2,3,3,4,5,5,5,6,7,7,7],[2,3,4,4,5,6,6,6,7,7,7,7],[3,4,5,5,6,7,7,7,7,7,7,7],
+            [3,4,5,5,6,7,7,7,7,7,7,7],[4,5,6,6,7,7,7,7,7,7,7,7],[4,5,6,6,7,7,7,7,7,7,7,7],[5,6,7,7,7,7,7,7,7,7,7,7]
+        ];
+        let finalScore = tableC[Math.min(armScore,6)][Math.min(neckTrunkScore,11)];
+        
+        document.getElementById('rula_score').innerText = finalScore;
+        let lv = "", bg = "", act = "";
+        if (finalScore <= 2) { lv = "ระดับ 1-2 : ยอมรับได้"; bg = "level-1"; act = "ทำงานต่อไปได้ตามปกติ"; }
+        else if (finalScore <= 4) { lv = "ระดับ 3-4 : ต้องตรวจสอบ"; bg = "level-3"; act = "ควรตรวจสอบลักษณะงานและอาจต้องปรับปรุง"; }
+        else if (finalScore <= 6) { lv = "ระดับ 5-6 : ต้องปรับปรุงโดยด่วน"; bg = "level-5"; act = "ต้องปรับปรุงลักษณะงานหรือท่าทางโดยเร็ว"; }
+        else { lv = "ระดับ 7 : อันตรายสูงมาก"; bg = "level-7"; act = "หยุดงานและปรับปรุงสภาพการทำงานทันที"; }
+        
+        document.getElementById('rula_level').innerHTML = `<span class="result-badge ${bg}">${lv}</span>`;
+        document.getElementById('rula_action').innerHTML = act;
+    }
+
+    function calcREBA() {
+        const getV = id => parseInt(document.getElementById(id).value) || 0;
+        
+        let neckScore = Math.min(2, (getV('re_neck')||1) + getV('re_neck_t') + getV('re_neck_s'));
+        let trunkScore = Math.min(4, (getV('re_trunk')||1) + getV('re_trunk_t') + getV('re_trunk_s'));
+        let legs = getV('re_legs') || 1;
+        
+        let tableA = [[1,2,3,4],[2,3,4,5],[3,4,5,6],[4,5,6,7],[5,6,7,8]];
+        let groupA = tableA[trunkScore-1][neckScore-1] + legs + getV('re_load');
+        
+        let upperScore = Math.min(4, (getV('re_upper')||1) + getV('re_up_r') + getV('re_up_a'));
+        let wristScore = Math.min(2, (getV('re_wrist')||1) + getV('re_wrist_b'));
+        
+        let tableB = [[1,2,3,4],[2,3,4,5],[3,4,5,6],[4,5,6,7],[5,6,7,8]];
+        let groupB = tableB[upperScore-1][wristScore-1] + (getV('re_lower')||1) + getV('re_coup');
+        
+        let tableC = [
+            [1,1,2,3,4,5,6,7,8,9,10,11],[1,2,3,4,5,6,7,8,9,10,11,12],[2,3,4,5,6,7,8,9,10,11,12,13],
+            [3,4,5,6,7,8,9,10,11,12,13,14],[4,5,6,7,8,9,10,11,12,13,14,15],[5,6,7,8,9,10,11,12,13,14,15,15],[6,7,8,9,10,11,12,13,14,15,15,15]
+        ];
+        let finalScore = Math.min(15, tableC[Math.min(groupA,6)][Math.min(groupB,11)] + getV('re_act'));
+        
+        document.getElementById('reba_score').innerText = finalScore;
+        let lv = "", bg = "", act = "";
+        if (finalScore <= 1) { lv = "ระดับ 1 : น้อยมาก"; bg = "level-1"; act = "ยอมรับได้ ไม่ต้องทำอะไร"; }
+        else if (finalScore <= 3) { lv = "ระดับ 2-3 : ปานกลาง"; bg = "level-3"; act = "อาจต้องมีการเปลี่ยนแปลง"; }
+        else if (finalScore <= 7) { lv = "ระดับ 4-7 : สูง"; bg = "level-5"; act = "ต้องดำเนินการปรับปรุงแก้ไขโดยเร็ว"; }
+        else { lv = "ระดับ 8+ : สูงมาก"; bg = "level-7"; act = "หยุดปฏิบัติงานและปรับปรุงแก้ไขทันที"; }
+        
+        document.getElementById('reba_level').innerHTML = `<span class="result-badge ${bg}">${lv}</span>`;
+        document.getElementById('reba_action').innerHTML = act;
+    }
+
+    document.querySelectorAll('.rula-input').forEach(el => el.addEventListener('change', calcRULA));
+    document.querySelectorAll('.reba-input').forEach(el => el.addEventListener('change', calcREBA));
+    
+    window.onload = () => { drawSVG(); calcRULA(); calcREBA(); };
+</script>
+</body>
+</html>

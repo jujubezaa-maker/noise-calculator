@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSE Toolbox | HRA Pro (Health Risk Assessment)</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; color: #2c3e50; }
+        .hero { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; padding: 2rem; border-radius: 15px; margin-bottom: 2rem; }
+        .hero h1 { font-weight: 700; margin-bottom: 0.5rem; font-size: 2rem; }
+        .hero .subtitle { color: #94a3b8; font-size: 1rem; margin-bottom: 0; }
+        
+        .card { border: none; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; overflow: hidden; background: white; }
+        .card-header { background-color: white; border-bottom: 1px solid #edf2f7; padding: 1.2rem 1.5rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .card-body { padding: 1.5rem; }
+        
+        .dept-block { background: white; border: 1px solid #e2e8f0; border-radius: 15px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+        .ws-block { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 15px; margin-top: 15px; margin-left: 20px; }
+        .chem-row { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-top: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+        
+        .form-label { font-weight: 500; color: #475569; font-size: 0.9rem; margin-bottom: 0.3rem; }
+        .form-select, .form-control { border: 2px solid #e2e8f0; border-radius: 8px; padding: 0.5rem 0.8rem; font-size: 0.9rem; }
+        .form-select:focus, .form-control:focus { border-color: #3b82f6; box-shadow: none; }
+        
+        .summary-table th { background-color: #1e293b !important; color: white !important; font-size: 0.85rem; text-align: center; vertical-align: middle; }
+        .summary-table td { font-size: 0.85rem; vertical-align: middle; }
+        
+        .ref-table th { background-color: #f1f5f9; font-size: 0.85rem; }
+        .ref-table td { font-size: 0.85rem; }
+        
+        .risk-tag { padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 0.8rem; display: inline-block; width: 100%; text-align: center; }
+        .lookup-hint { font-size: 0.75rem; color: #64748b; margin-top: 4px; display: block; }
+
+        @media print {
+            body { background: white; }
+            .no-print { display: none !important; }
+            .card { box-shadow: none; border: none; }
+            .print-page-break { page-break-before: always; }
+        }
+    </style>
+</head>
+<body class="container-fluid py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3 no-print">
+        <a href="index.html" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> กลับหน้าหลัก</a>
+        <div>
+            <button class="btn btn-outline-primary me-2" onclick="addDepartment()"><i class="bi bi-building-add"></i> เพิ่มแผนก (Area)</button>
+            <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> พิมพ์รายงาน</button>
+        </div>
+    </div>
+
+    <div class="hero no-print">
+        <h1><i class="bi bi-diagram-3"></i> HRA Pro (Health Risk Assessment)</h1>
+        <p class="subtitle">ระบบประเมินความเสี่ยงต่อสุขภาพจากสารเคมี อ้างอิง OEL/TLV และความถี่ในการทำงาน</p>
+    </div>
+
+    <div class="card no-print">
+        <div class="card-body d-flex align-items-center gap-3 bg-light rounded" style="border: 1px dashed #cbd5e1;">
+            <i class="bi bi-database-add fs-3 text-primary"></i>
+            <div class="flex-grow-1">
+                <h6 class="mb-1 fw-bold">โหลดฐานข้อมูลอ้างอิง (ACGIH CSV)</h6>
+                <div class="text-muted small">ระบบสามารถดึงค่า OEL อัตโนมัติ หากนำเข้าไฟล์ฐานข้อมูลที่สร้างจากระบบสืบค้น</div>
+            </div>
+            <div style="width: 300px;">
+                <input type="file" id="csvFileInput" accept=".csv" class="form-control form-control-sm">
+            </div>
+            <div id="db-status" class="text-secondary small fw-bold"><i class="bi bi-x-circle"></i> ยังไม่ได้โหลด</div>
+        </div>
+    </div>
+
+    <div id="assessment-container" class="no-print"></div>
+
+    <div class="card mt-4">
+        <div class="card-body p-0">
+            <h5 class="p-3 m-0 fw-bold border-bottom"><i class="bi bi-table text-primary"></i> ตารางสรุปผลการประเมินความเสี่ยงต่อสุขภาพ</h5>
+            <div class="table-responsive p-3">
+                <table class="table table-bordered summary-table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" style="width: 12%;">แผนก (Area)</th>
+                            <th rowspan="2" style="width: 12%;">จุดงาน (Work Station)</th>
+                            <th rowspan="2" style="width: 15%;">สารเคมี (Chemical)</th>
+                            <th rowspan="2" style="width: 5%;">HR</th>
+                            <th colspan="4">Concentration / Exposure Level</th>
+                            <th rowspan="2" style="width: 5%;">A</th>
+                            <th rowspan="2" style="width: 5%;">ER</th>
+                            <th rowspan="2" style="width: 12%;">ระดับความเสี่ยง</th>
+                        </tr>
+                        <tr>
+                            <th style="width: 7%;">ค่าที่วัดได้</th>
+                            <th style="width: 7%;">ค่า OEL</th>
+                            <th style="width: 6%;">หน่วย</th>
+                            <th style="width: 5%;">B</th>
+                        </tr>
+                    </thead>
+                    <tbody id="summary-body">
+                        <tr><td colspan="11" class="text-center py-4 text-muted italic">เพิ่มแผนกและสารเคมีเพื่อดูตารางสรุปผล</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-4 print-page-break">
+        <div class="card-body">
+            <h5 class="fw-bold mb-4 border-bottom pb-2"><i class="bi bi-info-circle text-primary"></i> ภาคผนวก: เกณฑ์การประเมินความเสี่ยงสุขภาพ</h5>
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <h6 class="fw-bold text-secondary">1. ระดับความเข้มข้น/ขนาดการสัมผัส (Concentration Rating: B)</h6>
+                    <table class="table table-bordered ref-table">
+                        <tr><th>ระดับ (B)</th><th>ความหมาย (เทียบกับค่ามาตรฐาน OEL)</th></tr>
+                        <tr><td>1</td><td>&lt; 10% ของ OEL-TWA</td></tr>
+                        <tr><td>2</td><td>10% - &lt; 50% ของ OEL-TWA</td></tr>
+                        <tr><td>3</td><td>50% - &lt; 75% ของ OEL-TWA</td></tr>
+                        <tr><td>4</td><td>75% - 100% ของ OEL-TWA</td></tr>
+                        <tr><td>5</td><td>&gt; 100% ของ OEL-TWA ขึ้นไป</td></tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="fw-bold text-secondary">2. ความถี่ในการสัมผัส (Frequency Rating: A)</h6>
+                    <table class="table table-bordered ref-table">
+                        <tr><th>ระดับ (A)</th><th>ความหมาย (ระยะเวลาสัมผัส)</th></tr>
+                        <tr><td>1</td><td>นานๆ ครั้ง (ปีละ 1 ครั้ง)</td></tr>
+                        <tr><td>2</td><td>ไม่บ่อย (ปีละ 2-3 ครั้ง)</td></tr>
+                        <tr><td>3</td><td>ค่อนข้างบ่อย (เดือนละ 2-3 ครั้ง)</td></tr>
+                        <tr><td>4</td><td>บ่อย (2-4 ชม. ต่อกะการทำงาน)</td></tr>
+                        <tr><td>5</td><td>ประจำ (ต่อเนื่องตลอดกะการทำงาน)</td></tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="fw-bold text-secondary">3. การประเมินระดับการสัมผัส (Exposure Rating: ER) = A x B</h6>
+                    <table class="table table-bordered ref-table">
+                        <tr><th>ผลคูณ (A x B)</th><th>ระดับ ER</th><th>แปลผล</th></tr>
+                        <tr><td>1 - 5</td><td><b>1</b></td><td>ต่ำมาก</td></tr>
+                        <tr><td>6 - 8</td><td><b>2</b></td><td>ต่ำ</td></tr>
+                        <tr><td>9 - 15</td><td><b>3</b></td><td>ปานกลาง</td></tr>
+                        <tr><td>16 - 20</td><td><b>4</b></td><td>สูง</td></tr>
+                        <tr><td>21 - 25</td><td><b>5</b></td><td>สูงมาก</td></tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="fw-bold text-secondary">4. ระดับความเสี่ยงสุขภาพ (Health Risk Assessment) = HR x ER</h6>
+                    <table class="table table-bordered ref-table">
+                        <tr><th>ผลคูณ (HR x ER)</th><th>ระดับความเสี่ยง</th><th>มาตรการเบื้องต้น</th></tr>
+                        <tr><td>1 - 3</td><td><b>ยอมรับได้</b> (Acceptable)</td><td>เฝ้าระวังปกติ</td></tr>
+                        <tr><td>4 - 9</td><td><b>ต่ำ</b> (Low)</td><td>ประเมินซ้ำเป็นระยะ</td></tr>
+                        <tr><td>10 - 16</td><td><b>ปานกลาง</b> (Moderate)</td><td>หามาตรการควบคุมและลดความเสี่ยง</td></tr>
+                        <tr><td>17 - 20</td><td><b>สูง</b> (High)</td><td>ดำเนินการควบคุมทันที (PPE/วิศวกรรม)</td></tr>
+                        <tr><td>21 - 25</td><td><b>สูงมาก</b> (Very High)</td><td>หยุดปฏิบัติงานและแก้ไขทันที</td></tr>
+                    </table>
+                </div>
+            </div>
+            <p class="text-end small text-muted mt-2 mb-0"><i>*ข้อมูลอ้างอิงจากหลักเกณฑ์และวิธีการประเมินความเสี่ยงต่อสุขภาพ พ.ศ. 2565</i></p>
+        </div>
+    </div>
+
+<datalist id="chemList"></datalist>
+
+<script>
+const iarcClass1_CAS = ["71-43-2", "50-00-0", "106-99-0", "79-01-6", "75-01-4", "75-21-8", "7440-43-9", "7440-41-7", "542-88-1", "92-67-1", "92-87-5", "107-30-2"];
+let acgihDB = {};
+let deptCounter = 0; let wsCounter = 0; let chemCounter = 0;
+
+document.getElementById('csvFileInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) { processCSV(e.target.result); };
+    reader.readAsText(file);
+});
+
+function processCSV(csvText) {
+    const lines = csvText.split('\n');
+    const dataList = document.getElementById('chemList');
+    dataList.innerHTML = ''; 
+    acgihDB = {}; 
+
+    // Determine column indices based on header (handles v10 structure)
+    const header = lines[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(h => h.replace(/^"|"$/g, '').trim());
+    const nameIdx = header.findIndex(h => h.includes('ชื่อสาร'));
+    const casIdx = header.findIndex(h => h.includes('CAS'));
+    const twaIdx = header.findIndex(h => h.includes('TWA') && !h.includes('หน่วย'));
+    const unitIdx = header.findIndex(h => h.includes('หน่วย TWA'));
+
+    if (nameIdx === -1 || twaIdx === -1) {
+        document.getElementById('db-status').innerHTML = `<i class="bi bi-exclamation-triangle text-danger"></i> รูปแบบไฟล์ไม่ถูกต้อง`;
+        return;
+    }
+
+    for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        const parts = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+        if (parts.length <= twaIdx) continue;
+
+        let name = parts[nameIdx].replace(/^"|"$/g, '').trim();
+        let cas = parts[casIdx].replace(/^"|"$/g, '').trim();
+        let twa = parts[twaIdx].replace(/^"|"$/g, '').trim();
+        let unit = unitIdx !== -1 ? parts[unitIdx].replace(/^"|"$/g, '').trim() : "—";
+
+        let oelValue = 0;
+        if (twa !== "—" && !isNaN(parseFloat(twa))) oelValue = parseFloat(twa);
+
+        if (name) {
+            let isIARC1 = iarcClass1_CAS.includes(cas);
+            acgihDB[name] = { cas: cas, tlv: oelValue, unit: unit, hr: isIARC1 ? 5 : 3 }; 
+            const option = document.createElement('option');
+            option.value = name;
+            dataList.appendChild(option);
+        }
+    }
+    document.getElementById('db-status').innerHTML = `<i class="bi bi-check-circle-fill text-success"></i> พร้อมใช้งาน (${Object.keys(acgihDB).length} สาร)`;
+    document.getElementById('db-status').className = "text-success small fw-bold";
+}
+
+function addDepartment() {
+    deptCounter++;
+    const deptHtml = `
+        <div class="dept-block" id="dept-${deptCounter}">
+            <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                <div class="d-flex align-items-center gap-2 w-50">
+                    <i class="bi bi-building fs-4 text-primary"></i>
+                    <input type="text" class="form-control fw-bold border-0 bg-transparent px-0 dept-name input-trigger" style="font-size: 1.2rem;" placeholder="พิมพ์ชื่อแผนก (Area)...">
+                </div>
+                <div>
+                    <button class="btn btn-sm btn-outline-primary me-2" onclick="addWorkStation(${deptCounter})"><i class="bi bi-plus"></i> เพิ่มจุดงาน</button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeElement('dept-${deptCounter}')"><i class="bi bi-trash"></i> ลบ</button>
+                </div>
+            </div>
+            <div id="ws-container-dept-${deptCounter}"></div>
+        </div>
+    `;
+    document.getElementById('assessment-container').insertAdjacentHTML('beforeend', deptHtml);
+    addWorkStation(deptCounter); 
+    attachInputListeners();
+}
+
+function addWorkStation(deptId) {
+    wsCounter++;
+    const wsHtml = `
+        <div class="ws-block" id="ws-${wsCounter}">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex align-items-center gap-2 w-50">
+                    <i class="bi bi-geo-alt-fill text-secondary"></i>
+                    <input type="text" class="form-control form-control-sm fw-bold border-0 bg-transparent px-0 ws-name input-trigger" placeholder="พิมพ์ชื่อจุดปฏิบัติงาน...">
+                </div>
+                <div>
+                    <button class="btn btn-sm btn-light border me-1" onclick="addChemical(${wsCounter})"><i class="bi bi-plus"></i> สารเคมี</button>
+                    <button class="btn btn-sm btn-light border text-danger" onclick="removeElement('ws-${wsCounter}')"><i class="bi bi-x"></i></button>
+                </div>
+            </div>
+            <div id="chem-container-ws-${wsCounter}"></div>
+        </div>
+    `;
+    document.getElementById(`ws-container-dept-${deptId}`).insertAdjacentHTML('beforeend', wsHtml);
+    addChemical(wsCounter); 
+    attachInputListeners();
+}
+
+function addChemical(wsId) {
+    chemCounter++;
+    const chemHtml = `
+        <div class="chem-row" id="chem-${chemCounter}">
+            <div class="row g-2 align-items-start">
+                <div class="col-md-3">
+                    <label class="form-label">สารเคมี (Chemical)</label>
+                    <input type="text" list="chemList" class="form-control form-control-sm chem-name input-trigger" id="chem-input-${chemCounter}" placeholder="พิมพ์เพื่อค้นหา..." onchange="lookupChemUI(${chemCounter})">
+                    <span class="lookup-hint" id="hint-${chemCounter}">CAS: -</span>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label text-danger">ระดับอันตราย (HR)</label>
+                    <select class="form-select form-select-sm hr-val input-trigger" id="hr-${chemCounter}">
+                        <option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">ค่าที่วัดได้ (C)</label>
+                    <input type="number" step="0.001" class="form-control form-control-sm val-input input-trigger" placeholder="ตัวเลข">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">ค่ามาตรฐาน (OEL)</label>
+                    <div class="input-group input-group-sm">
+                        <input type="number" step="0.001" class="form-control oel-input input-trigger" id="oel-${chemCounter}" placeholder="-">
+                        <span class="input-group-text bg-light fw-bold unit-disp" id="unit-${chemCounter}">-</span>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label text-primary">ความถี่สัมผัส (A)</label>
+                    <select class="form-select form-select-sm freq-val input-trigger">
+                        <option value="1">1 (น้อยมาก)</option><option value="2">2</option><option value="3" selected>3 (ปานกลาง)</option><option value="4">4</option><option value="5">5 (ประจำ)</option>
+                    </select>
+                </div>
+                <div class="col-md-1 d-flex justify-content-end align-items-end" style="padding-top: 25px;">
+                    <button class="btn btn-sm btn-outline-danger border-0" onclick="removeElement('chem-${chemCounter}')"><i class="bi bi-trash"></i></button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.getElementById(`chem-container-ws-${wsId}`).insertAdjacentHTML('beforeend', chemHtml);
+    attachInputListeners();
+}
+
+function removeElement(id) {
+    const el = document.getElementById(id);
+    if(el) { el.remove(); buildSummaryTable(); }
+}
+
+function attachInputListeners() {
+    document.querySelectorAll('.input-trigger').forEach(input => {
+        input.removeEventListener('input', buildSummaryTable);
+        input.removeEventListener('change', buildSummaryTable);
+        input.addEventListener('input', buildSummaryTable);
+        input.addEventListener('change', buildSummaryTable);
+    });
+    buildSummaryTable();
+}
+
+function lookupChemUI(chemId) {
+    const inputEl = document.getElementById(`chem-input-${chemId}`);
+    const name = inputEl.value;
+    
+    if (acgihDB[name]) {
+        const casNo = acgihDB[name].cas;
+        document.getElementById(`unit-${chemId}`).innerText = acgihDB[name].unit;
+        document.getElementById(`oel-${chemId}`).value = acgihDB[name].tlv;
+        document.getElementById(`hr-${chemId}`).value = acgihDB[name].hr;
+
+        if (iarcClass1_CAS.includes(casNo)) {
+            document.getElementById(`hint-${chemId}`).innerHTML = `CAS: ${casNo} <span class="badge bg-danger"><i class="bi bi-exclamation-triangle"></i> ก่อมะเร็ง (IARC 1)</span>`;
+            inputEl.classList.add('border-danger', 'text-danger');
+            inputEl.classList.remove('border-success');
+        } else {
+            document.getElementById(`hint-${chemId}`).innerHTML = `CAS: ${casNo}`;
+            inputEl.classList.add('border-success');
+            inputEl.classList.remove('border-danger', 'text-danger');
+        }
+    }
+    buildSummaryTable();
+}
+
+function buildSummaryTable() {
+    const body = document.getElementById('summary-body');
+    body.innerHTML = "";
+    let hasData = false;
+
+    document.querySelectorAll('.dept-block').forEach(dept => {
+        const deptName = dept.querySelector('.dept-name').value || "-";
+        
+        dept.querySelectorAll('.ws-block').forEach(ws => {
+            const wsName = ws.querySelector('.ws-name').value || "-";
+            
+            ws.querySelectorAll('.chem-row').forEach(chem => {
+                hasData = true;
+                const chemName = chem.querySelector('.chem-name').value || "-";
+                const hr = parseInt(chem.querySelector('.hr-val').value) || 1;
+                const val = parseFloat(chem.querySelector('.val-input').value) || 0;
+                const oel = parseFloat(chem.querySelector('.oel-input').value) || 1;
+                const unit = chem.querySelector('.unit-disp').innerText || "-";
+                const a = parseInt(chem.querySelector('.freq-val').value) || 1;
+
+                const isIARC = acgihDB[chemName] && iarcClass1_CAS.includes(acgihDB[chemName].cas);
+                const chemDisplay = isIARC ? `<b>${chemName}</b> <br><small class="text-danger">(IARC 1)</small>` : chemName;
+
+                let b = 1;
+                const ratio = (val / oel) * 100;
+                if (ratio < 10) b = 1; else if (ratio < 50) b = 2; else if (ratio < 75) b = 3; else if (ratio <= 100) b = 4; else b = 5;
+
+                const erScore = a * b;
+                let erLevel = 1;
+                if (erScore <= 5) erLevel = 1; else if (erScore <= 8) erLevel = 2; else if (erScore <= 15) erLevel = 3; else if (erScore <= 20) erLevel = 4; else erLevel = 5;
+
+                const hraScore = hr * erLevel;
+                let rText = "ยอมรับได้", rClass = "bg-success";
+                if (hraScore <= 3) { rText = "ยอมรับได้"; rClass = "bg-success"; }
+                else if (hraScore <= 9) { rText = "ต่ำ"; rClass = "bg-info text-dark"; }
+                else if (hraScore <= 16) { rText = "ปานกลาง"; rClass = "bg-warning text-dark"; }
+                else if (hraScore <= 20) { rText = "สูง"; rClass = "bg-orange"; }
+                else { rText = "สูงมาก"; rClass = "bg-danger"; }
+
+                body.insertAdjacentHTML('beforeend', `<tr>
+                    <td class="fw-bold">${deptName}</td>
+                    <td>${wsName}</td>
+                    <td>${chemDisplay}</td>
+                    <td class="text-center fw-bold">${hr}</td>
+                    <td class="text-center">${val || "N/A"}</td>
+                    <td class="text-center">${oel}</td>
+                    <td class="text-center">${unit}</td>
+                    <td class="text-center"><b>${b}</b></td>
+                    <td class="text-center"><b>${a}</b></td>
+                    <td class="text-center fw-bold">${erLevel}</td>
+                    <td><span class="risk-tag ${rClass}" style="${rClass === 'bg-orange' ? 'background-color:#f97316;color:white;' : ''}">${rText}</span></td>
+                </tr>`);
+            });
+        });
+    });
+    
+    if (!hasData) {
+        body.innerHTML = '<tr><td colspan="11" class="text-center py-4 text-muted italic">เพิ่มแผนกและสารเคมีเพื่อดูตารางสรุปผล</td></tr>';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => { addDepartment(); });
+</script>
+</body>
+</html>

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSE Toolbox | ประเมินความเครียดจากความร้อน (Heat Stress)</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; color: #2c3e50; }
+        .hero { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; padding: 2rem; border-radius: 15px; margin-bottom: 2rem; }
+        .hero h1 { font-weight: 700; margin-bottom: 0.5rem; font-size: 2rem; }
+        .hero .subtitle { color: #94a3b8; font-size: 1rem; margin-bottom: 0; }
+        
+        .desktop-layout { display: grid; grid-template-columns: 1fr 450px; gap: 20px; }
+        @media (max-width: 991px) { .desktop-layout { grid-template-columns: 1fr; } }
+        
+        .card { border: none; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; overflow: hidden; }
+        .card-header { background-color: white; border-bottom: 1px solid #edf2f7; padding: 1.2rem 1.5rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .card-header .step-badge { background: #f59e0b; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; }
+        .card-body { padding: 1.5rem; }
+        
+        .form-label { font-weight: 500; color: #475569; font-size: 0.9rem; margin-bottom: 0.3rem; }
+        .form-select, .form-control { border: 2px solid #e2e8f0; border-radius: 8px; padding: 0.5rem 0.8rem; font-size: 0.9rem; }
+        .form-select:focus, .form-control:focus { border-color: #f59e0b; box-shadow: none; }
+        
+        .activity-row { background: #f8fafc; border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #e2e8f0; transition: all 0.2s; }
+        .activity-row:hover { border-color: #f59e0b; }
+        
+        .result-panel { background: #fffbeb; border: 2px solid #fde68a; border-radius: 15px; padding: 1.5rem; height: fit-content; position: sticky; top: 20px; }
+        .result-panel.danger { background: #fef2f2; border-color: #fecaca; }
+        .result-panel.success { background: #f0fdf4; border-color: #bbf7d0; }
+        
+        .stat-box { background: white; border-radius: 10px; padding: 1rem; margin-bottom: 1rem; border-left: 4px solid #f59e0b; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .stat-box.safe { border-color: #10b981; }
+        .stat-box.warn { border-color: #f59e0b; }
+        .stat-box.danger { border-color: #ef4444; }
+        .stat-label { font-size: 0.8rem; color: #64748b; text-transform: uppercase; font-weight: 600; margin-bottom: 0.2rem; }
+        .stat-value { font-size: 1.5rem; font-weight: 700; color: #0f172a; }
+        
+        .workload-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
+        .workload-light { background: #10b981; color: white; }
+        .workload-moderate { background: #f59e0b; color: white; }
+        .workload-heavy { background: #ef4444; color: white; }
+        
+        .metab-table th { background: #f8fafc; color: #475569; font-size: 0.75rem; }
+        .metab-table td { font-size: 0.75rem; vertical-align: middle; }
+
+        @media print {
+            body { background: white; }
+            .no-print, .hero { display: none !important; }
+            .desktop-layout { display: block; }
+            .card, .result-panel { box-shadow: none; border: 1px solid #ccc; margin-bottom: 20px; }
+            .stat-box { border: 1px solid #ccc; border-left: 4px solid #666 !important; }
+        }
+    </style>
+</head>
+<body class="container-fluid py-4">
+
+    <a href="index.html" class="btn btn-outline-secondary mb-3 no-print"><i class="bi bi-arrow-left"></i> กลับหน้าหลัก</a>
+
+    <div class="hero no-print">
+        <h1><i class="bi bi-thermometer-half"></i> ประเมินความเครียดจากความร้อน (Heat Stress)</h1>
+        <p class="subtitle">ประเมินภาระงานและเทียบเกณฑ์ WBGT ตามกฎกระทรวงไทย / ACGIH</p>
+    </div>
+
+    <div class="desktop-layout">
+        <!-- Left: Inputs -->
+        <div class="input-section">
+            
+            <div class="card no-print">
+                <div class="card-header"><span class="step-badge">1</span> ข้อมูลพื้นฐานและผลตรวจวัด</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label"><i class="bi bi-person"></i> ผู้ปฏิบัติงาน</label>
+                            <input type="text" class="form-control" id="workerName" placeholder="ชื่อ-สกุล" oninput="calculate()">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label"><i class="bi bi-graph-up"></i> น้ำหนักตัว (กก.)</label>
+                            <input type="number" class="form-control" id="bodyWeight" value="70" step="1" oninput="calculate()">
+                            <small class="text-muted" style="font-size:0.7rem;">ใช้คำนวณสัดส่วนเมตาบอลิซึม</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-danger fw-bold"><i class="bi bi-thermometer-sun"></i> WBGT วัดได้ (°C)</label>
+                            <input type="number" class="form-control border-danger bg-light" id="wbgtMeasured" step="0.1" value="32.5" oninput="calculate()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card no-print">
+                <div class="card-header"><span class="step-badge" style="background:#3b82f6;">2</span> ลำดับกิจกรรมและภาระงาน (Time-Weighted)</div>
+                <div class="card-body">
+                    <div id="activitiesContainer"></div>
+                    <button class="btn btn-sm btn-outline-primary mt-2" onclick="addActivity()">
+                        <i class="bi bi-plus-lg"></i> เพิ่มช่วงเวลากิจกรรม
+                    </button>
+                    
+                    <hr class="my-4">
+                    
+                    <h6 class="fw-bold mb-3 fs-6"><i class="bi bi-info-circle"></i> ตารางอ้างอิงภาระงาน (ISO 7243)</h6>
+                    <div class="table-responsive shadow-none border rounded">
+                        <table class="table table-sm metab-table m-0">
+                            <thead>
+                                <tr><th>หมวดหมู่ (Category)</th><th>อัตราเผาผลาญ (Assigned Watt)</th><th>ความหนัก (Workload)</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Rest (นั่งพัก)</td><td>115 W</td><td><span class="workload-badge workload-light">เบา</span></td></tr>
+                                <tr><td>Light (งานเบา)</td><td>180 W</td><td><span class="workload-badge workload-light">เบา</span></td></tr>
+                                <tr><td>Moderate (ปานกลาง)</td><td>300 W</td><td><span class="workload-badge workload-moderate">ปานกลาง</span></td></tr>
+                                <tr><td>Heavy (งานหนัก)</td><td>415 W</td><td><span class="workload-badge workload-heavy">หนัก</span></td></tr>
+                                <tr><td>Very heavy (หนักมาก)</td><td>520 W</td><td><span class="workload-badge workload-heavy">หนักมาก</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Right: Results Panel -->
+        <div>
+            <div class="result-panel" id="resultPanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold m-0"><i class="bi bi-clipboard-data"></i> ผลการประเมิน (Results)</h5>
+                    <button class="btn btn-sm btn-warning text-dark no-print" onclick="window.print()"><i class="bi bi-printer"></i> พิมพ์</button>
+                </div>
+                
+                <h6 class="fw-bold text-secondary mt-3 fs-6 border-bottom pb-2">1. การประเมินภาระงาน (Workload)</h6>
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <div class="stat-box" style="border-color:#3b82f6;">
+                            <div class="stat-label">พลังงานรวม</div>
+                            <div class="stat-value text-primary" id="totalEnergyVal">0</div>
+                            <div class="small text-muted">kcal</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-box" style="border-color:#3b82f6;">
+                            <div class="stat-label">เฉลี่ย (TWA)</div>
+                            <div class="stat-value text-primary" id="avgMetabVal">0</div>
+                            <div class="small text-muted">kcal/hr</div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="p-2 bg-white border rounded text-center" id="workloadResult">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <h6 class="fw-bold text-secondary mt-4 fs-6 border-bottom pb-2">2. การเทียบเกณฑ์ความร้อน (Heat Stress)</h6>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="stat-box" id="wbgtBox">
+                            <div class="stat-label">WBGT ที่วัดได้</div>
+                            <div class="stat-value" id="wbgtDisplay">0.0</div>
+                            <div class="small text-muted">°C</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-box" style="border-color:#64748b;">
+                            <div class="stat-label">เกณฑ์มาตรฐาน</div>
+                            <div class="stat-value text-secondary" id="standardDisplay">0.0</div>
+                            <div class="small text-muted">°C (Limit)</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Final Status Card -->
+                <div id="heatResultCard" class="mt-2 p-3 bg-white rounded-3 border">
+                    <div id="heatStatusVal" class="fs-5 fw-bold text-center mb-2"></div>
+                    <div id="heatRecommendation" class="small text-muted" style="background:#f8fafc; padding:10px; border-radius:6px; font-size: 0.75rem;"></div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+<script>
+    let activityCount = 0;
+    const metabValues = { rest: 115, light: 180, moderate: 300, heavy: 415, veryheavy: 520 };
+    
+    function addActivity() {
+        activityCount++;
+        const html = `
+            <div class="activity-row" id="activity-${activityCount}">
+                <div class="row g-2">
+                    <div class="col-md-5">
+                        <label class="form-label" style="font-size:0.8rem;">ระดับภาระงาน</label>
+                        <select class="form-select form-select-sm activity-type" data-id="${activityCount}" onchange="updateDesc(${activityCount})">
+                            <option value="rest">Rest (นั่งพัก)</option>
+                            <option value="light">Light (งานเบา)</option>
+                            <option value="moderate" selected>Moderate (งานปานกลาง)</option>
+                            <option value="heavy">Heavy (งานหนัก)</option>
+                            <option value="veryheavy">Very Heavy (งานหนักมาก)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label" style="font-size:0.8rem;">เวลา (นาที)</label>
+                        <input type="number" class="form-control form-control-sm activity-duration" data-id="${activityCount}" value="30" step="5" min="1" oninput="calculate()">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label" style="font-size:0.8rem;">Watt (อ้างอิง)</label>
+                        <input type="text" class="form-control form-control-sm activity-energy text-center" data-id="${activityCount}" readonly style="background:#e2e8f0; font-weight:bold;">
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <button class="btn btn-sm btn-outline-danger border-0 w-100" onclick="removeActivity(${activityCount})"><i class="bi bi-trash"></i></button>
+                    </div>
+                </div>
+                <div class="text-muted mt-2 italic" style="font-size: 0.7rem;" id="desc-${activityCount}"></div>
+            </div>
+        `;
+        document.getElementById('activitiesContainer').insertAdjacentHTML('beforeend', html);
+        updateDesc(activityCount);
+    }
+    
+    function updateDesc(id) {
+        let sel = document.querySelector(`.activity-type[data-id="${id}"]`);
+        let valInput = document.querySelector(`.activity-energy[data-id="${id}"]`);
+        let descSpan = document.getElementById(`desc-${id}`);
+        if (!sel) return;
+        
+        let type = sel.value;
+        valInput.value = metabValues[type] + " W";
+        
+        let d = "";
+        switch(type) {
+            case 'rest': d = "นั่งพักเฉลี่ย (Sitting at rest)"; break;
+            case 'light': d = "นั่งทำงานใช้มือ/แขนเบาๆ, ขับรถ, ยืนทำงานบางอย่าง, เดินเป็นครั้งคราว"; break;
+            case 'moderate': d = "งานใช้มือและแขนต่อเนื่อง, ยกของเบาๆ, ดันหรือดึงของเบา, เดินระดับปกติ"; break;
+            case 'heavy': d = "งานใช้แขนและลำตัวอย่างรุนแรง, ขุดดิน, แบกของหนัก, เลื่อยไม้ด้วยมือ, เดินเร็ว"; break;
+            case 'veryheavy': d = "กิจกรรมที่รุนแรงมาก เร่งรีบ หรือทำเต็มขีดจำกัดความเร็วสูงสุด"; break;
+        }
+        descSpan.innerHTML = d;
+        calculate();
+    }
+    
+    function removeActivity(id) {
+        let el = document.getElementById(`activity-${id}`);
+        if (el) { el.remove(); calculate(); }
+    }
+    
+    function calculate() {
+        let bw = parseFloat(document.getElementById('bodyWeight').value) || 70;
+        let wbgt = parseFloat(document.getElementById('wbgtMeasured').value) || 0;
+        
+        let tMin = 0, tWattMin = 0;
+        document.querySelectorAll('.activity-row').forEach(act => {
+            let d = parseFloat(act.querySelector('.activity-duration').value) || 0;
+            let type = act.querySelector('.activity-type').value;
+            let w = metabValues[type] || 0;
+            tMin += d;
+            tWattMin += (w * d);
+        });
+        
+        if (tMin === 0) return;
+        
+        let avgWatt = tWattMin / tMin;
+        // W to kcal/hr = W * 0.86, adjusting for body weight vs 70kg standard
+        let avgKcalHr = avgWatt * 0.86 * (bw / 70);
+        let totalEnergy = avgKcalHr * (tMin / 60);
+        
+        document.getElementById('totalEnergyVal').innerText = totalEnergy.toFixed(0);
+        document.getElementById('avgMetabVal').innerText = avgKcalHr.toFixed(0);
+        
+        // Workload Classification (Thai Law: <=200 Light, 201-350 Mod, >350 Heavy)
+        let wClass = "", wText = "", wLevel = "";
+        if (avgKcalHr <= 200) { wText = "งานเบา (Light)"; wClass = "workload-light"; wLevel = "light"; }
+        else if (avgKcalHr <= 350) { wText = "งานปานกลาง (Moderate)"; wClass = "workload-moderate"; wLevel = "moderate"; }
+        else { wText = "งานหนัก (Heavy)"; wClass = "workload-heavy"; wLevel = "heavy"; }
+        
+        document.getElementById('workloadResult').innerHTML = `<span class="workload-badge ${wClass} fs-6">${wText}</span>`;
+        
+        // Heat Stress Evaluation
+        let stdWbgt = wLevel === 'light' ? 34 : (wLevel === 'moderate' ? 32 : 30);
+        document.getElementById('wbgtDisplay').innerText = wbgt.toFixed(1);
+        document.getElementById('standardDisplay').innerText = stdWbgt.toFixed(1);
+        
+        let isExceed = wbgt > stdWbgt;
+        let diff = wbgt - stdWbgt;
+        
+        let panel = document.getElementById('resultPanel');
+        let wbgtBox = document.getElementById('wbgtBox');
+        let statusVal = document.getElementById('heatStatusVal');
+        let rec = document.getElementById('heatRecommendation');
+        
+        panel.className = 'result-panel'; wbgtBox.className = 'stat-box';
+        
+        if (!isExceed) {
+            panel.classList.add('success'); wbgtBox.classList.add('safe');
+            statusVal.innerHTML = '<span class="text-success"><i class="bi bi-check-circle"></i> ผ่านเกณฑ์มาตรฐาน</span>';
+            rec.innerHTML = "ระดับดัชนีความร้อนสะสมอยู่ในเกณฑ์ปกติ มีความปลอดภัย เฝ้าระวังผู้ปฏิบัติงานที่เพิ่งเริ่มงาน (Acclimatization) และจัดเตรียมน้ำดื่มให้เพียงพอ";
+        } else {
+            panel.classList.add('danger'); wbgtBox.classList.add('danger');
+            statusVal.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle"></i> เกินเกณฑ์มาตรฐาน ${diff.toFixed(1)}°C</span>`;
+            rec.innerHTML = `
+                <strong class="text-danger">มาตรการควบคุมเร่งด่วน:</strong><br>
+                1. ลดเวลาสัมผัสความร้อน จัดตาราง Work-Rest cycle ใหม่<br>
+                2. จัดเตรียมน้ำดื่ม น้ำเกลือแร่ ให้เพียงพอและบังคับดื่มทุก 15-20 นาที<br>
+                3. ติดตั้งฉนวน ฉีดพรมน้ำ หรือพัดลมระบายอากาศเพิ่มเติม<br>
+                4. เฝ้าระวังอาการ Heat Stroke (หน้ามืด, วิงเวียน, เป็นตะคริว, หยุดเหงื่อออก)
+            `;
+        }
+    }
+    
+    window.onload = () => { addActivity(); addActivity(); setTimeout(calculate, 100); };
+</script>
+</body>
+</html>
